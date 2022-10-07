@@ -37,3 +37,17 @@ I believe we should get started with two separate labels in the dataset:
 - `maybe` for uncertain spots that we can review.
 
 Some detailed LabelMe examples [here](https://datagen.tech/guides/image-annotation/labelme/).
+
+# Workflow
+### Download data
+### Convert JPEG2000 to PNG
+- `convert_to_png.py` is a script to convert a whole directory of files into png format
+### Label the Data
+- Use `labelme`. Optionally, use `remove_json_imagedata.py` to clear the imagedata from saved json files
+- Use `generate_blank_json.py` to fill in any JSON files for images that have no objects
+### Convert JSON Polygons to Mask
+- Use `json_to_dataset.py` to convert a directory of the JSON files into binary mask images
+### Slice the Images to Appropriate Size
+- Use `slice_dataset_tiles.py` to slice the images into proper sizes that will be used by the CNN
+
+

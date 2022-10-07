@@ -3,9 +3,9 @@ import os
 from PIL import Image
 import numpy as np
 
-sourcefile = "data/boro_queens_sp18.zip"
-outdir = "data/boro_queens_sp18_png"
-outdir_a = "data/boro_queens_sp18_alpha"
+sourcefile = "c:\\nycdata\\boro_queens_sp18.zip"
+outdir = "c:\\nycdata\\boro_queens_sp18_png"
+outdir_a = "c:\\nycdata\\boro_queens_sp18_alpha"
 
 
 def verify_dir(mydir):
