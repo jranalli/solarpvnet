@@ -1,2 +1,5 @@
 pillow
 split-image
+
+tensorflow
+segmentation-models
