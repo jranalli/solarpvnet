@@ -1,6 +1,6 @@
 import json
 
-from fileio import files_of_type
+from utils.fileio import files_of_type
 
 
 def clear_imagedata(json_file):

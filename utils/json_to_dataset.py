@@ -8,7 +8,7 @@ import numpy as np
 import PIL.Image
 import PIL.ImageDraw
 
-from fileio import verify_dir, files_of_type
+from utils.fileio import verify_dir, files_of_type
 
 
 def shape_to_mask(img_shape, points, shape_type=None,

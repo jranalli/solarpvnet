@@ -2,7 +2,7 @@ import json
 import os
 
 from PIL import Image
-from fileio import files_of_type
+from utils.fileio import files_of_type
 
 
 def generate_blank_json_file(json_file, shape):

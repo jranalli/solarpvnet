@@ -3,7 +3,7 @@ import os
 from PIL import Image
 import numpy as np
 
-from fileio import verify_dir
+from utils.fileio import verify_dir
 
 
 def to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png"):

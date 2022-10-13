@@ -1,7 +1,7 @@
 from PIL import Image
 import numpy as np
 
-from fileio import files_of_type
+from utils.fileio import files_of_type
 
 # https://github.com/whiplashoo/split-image
 from split_image.split import split
