@@ -1,28 +1,32 @@
 import json
-import os
-import glob
+
+from fileio import files_of_type
 
 
-mydir = 'C:\\nycdata\\boro_queens_sp18_png\\'
+def clear_imagedata(json_file):
+    """
+    Remove imagedata from labelme JSON files. By default labelme stores a full
+    copy of the image in the JSON file leading to huge JSON files.
 
-
-def clear_imageData_file(json_file):
+    Parameters
+    ----------
+    json_file: str
+        Full path to json file that will be modified in place
+    """
     with open(json_file, "r") as file:
         data = json.load(file)
 
     if data['imageData'] is not None:
+        print("Removing data from: " + json_file)
         with open(json_file, "w") as file:
             data['imageData'] = None
             json_str = json.dumps(data, indent=2)
             file.write(json_str)
 
 
-def clear_imageData_dir(somedir):
-    files = [f for f in glob.glob(somedir + "*.json")]
-    for f in files:
-        clear_imageData_file(f)
-
-
+# Example directory for testing
+mydir = 'C:\\nycdata\\boro_queens_sp18_png\\'
 
 if __name__ == "__main__":
-    clear_imageData_dir(mydir)
+    for fn in files_of_type(mydir, "*.json"):
+        clear_imagedata(fn)

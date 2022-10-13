@@ -17,7 +17,7 @@ pip install numpy
 Download a file. Edit `convert_to_png.py` to point to the correct file
 
 Original Data File: Queens - State Plane 2018
-[Direct Download](http://gis.ny.gov/gateway/mg/2018/new_york_city/)
+[Direct Download](https://gis.ny.gov/gateway/mg/2018/new_york_city/)
 
 # Labelling
 Install [LabelMe](https://github.com/wkentaro/labelme).
