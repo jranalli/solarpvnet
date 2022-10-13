@@ -2,8 +2,8 @@ import glob
 # import argparse
 #
 # import tensorflow as tf
-# # gpu_options = tf.compat.v1.GPUOptions(allow_growth=True)
-# # session = tf.compat.v1.InteractiveSession(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options))
+# gpu_options = tf.compat.v1.GPUOptions(allow_growth=True)
+# session = tf.compat.v1.InteractiveSession(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options))
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
 from keras.callbacks import ModelCheckpoint, CSVLogger
@@ -71,6 +71,7 @@ inputpath = "c:\\nycdata\\sample_dataset_tiles\\"
 maskpath = "c:\\nycdata\\sample_dataset_mask_tiles\\"
 weightfile = "c:\\nycdata\\test_weights.h5"
 logfile = "c:\\nycdata\\test_log.csv"
+
 def main():
     # parser = argparse.ArgumentParser(
     #     formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -112,6 +113,7 @@ def main():
     train_gen = get_augmented(
         x_train,
         y_train,
+        seed=seed,
         batch_size=4, #2
         data_gen_args=dict(
             rotation_range=30.,

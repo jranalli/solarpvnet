@@ -71,7 +71,7 @@ def preprocess_xy_images(image_list, mask_list, size=(576, 576)):
 
     # Normalize
     x = np.asarray(x, dtype=np.float32) / 255.0
-    y = np.asarray(y, dtype=np.float32) / 1.0
+    y = np.asarray(y, dtype=np.float32) / np.max(y)
 
     # Reshape X to (n_examples, size, size, 3[RGB])
     x = x.reshape(x.shape[0], x.shape[1], x.shape[2], 3)
