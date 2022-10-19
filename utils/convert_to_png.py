@@ -3,10 +3,11 @@ import os
 from PIL import Image
 import numpy as np
 
-from utils.fileio import verify_dir
+from utils.fileio import verify_dir, is_dir_empty, clear_dir
 
 
-def to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png"):
+def zip_to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png",
+               overwrite=False, verbose=True):
     """
     Process ZIP files from New York City GIS data download
          (https://gis.ny.gov/gateway/mg/2018/new_york_city/)
@@ -25,7 +26,29 @@ def to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png"):
         are not saved.
     imgtype: str (default "png")
         Extension of the image file name to save as. Must be supported by PIL.
+    overwrite: bool (default False)
+        If output path(s) exist, should the operation be run anyway?
+    verbose: bool (default True)
+        Print a status update file by file?
     """
+
+    # Make sure our output directories exist
+    verify_dir(rgb_dir)
+    if not is_dir_empty(rgb_dir):
+        if not overwrite:
+            print("RGB Output path not empty. Skipping entire operation.")
+            return
+        else:
+            clear_dir(rgb_dir)
+
+    if ir_dir is not None:
+        verify_dir(ir_dir)
+        if not is_dir_empty(ir_dir):
+            if not overwrite:
+                print("IR Output path not empty. Skipping entire operation.")
+                return
+            else:
+                clear_dir(ir_dir)
 
     # Open the zip file for internal access
     with ZipFile(source_zip, "r") as zipdat:
@@ -42,13 +65,9 @@ def to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png"):
             # Check to see if it's an image
             if ext == ".jp2":
 
-                # Just output a status indicator
-                print(fn)
-
-                # Make sure our output directories exist
-                verify_dir(rgb_dir)
-                if ir_dir is not None:
-                    verify_dir(ir_dir)
+                if verbose:
+                    # Just output a status indicator
+                    print(fn)
 
                 # Get access to this individual picture file within the zip
                 with zipdat.open(fn) as file:
@@ -80,4 +99,4 @@ outdir = "c:\\nycdata\\boro_queens_sp18_png"
 outdir_a = "c:\\nycdata\\boro_queens_sp18_alpha"
 
 if __name__ == "__main__":
-    to_png(sourcefile, outdir, outdir_a)
+    zip_to_png(sourcefile, outdir, outdir_a)

@@ -114,7 +114,8 @@ def shapes_to_label(img_shape, shapes, label_name_to_value):
     return cls, ins
 
 
-def json_to_binary(json_file, out, label_name_to_value, imgtype="png"):
+def json_to_binary(json_file, mask_dir, label_name_to_value,
+                   imgtype="png", overwrite=False):
     """
     Adapted from labelme.cli.json_to_dataset
             - https://github.com/wkentaro/labelme
@@ -126,21 +127,32 @@ def json_to_binary(json_file, out, label_name_to_value, imgtype="png"):
     ----------
     json_file: str
         Path to the labelme generated JSON shape file.
-    out: str
+    mask_dir: str
         Full path to the file output directory. Output will be PNG file
     label_name_to_value: dict
         a dict connecting polygon label names to the numeric id that should be
         displayed in the output array
     imgtype: str (default "png")
         str of the file extension for the output image.
+    overwrite: bool (default False)
+        If output file exists, should the operation be run anyway?
     """
-    if out is None:
+    if mask_dir is None:
         out_dir = os.path.basename(json_file).replace(".", "_")
         out_dir = os.path.join(os.path.dirname(json_file), out_dir)
     else:
-        out_dir = out
+        out_dir = mask_dir
 
+    # Generate the output directory and filename
     verify_dir(out_dir)
+    out_fn = os.path.basename(json_file).replace(".json", "." + imgtype)
+    out_fn = os.path.join(out_dir, out_fn)
+    if os.path.exists(out_fn):
+        if not overwrite:
+            print("Mask file exists: skipping.")
+            return
+        else:
+            os.remove(out_fn)
 
     data = json.load(open(json_file))
     imshape = (data['imageHeight'], data['imageWidth'])
@@ -158,8 +170,7 @@ def json_to_binary(json_file, out, label_name_to_value, imgtype="png"):
     lbl_pil = PIL.Image.fromarray(lbl.astype(np.uint8), mode="P")
 
     # Generate the output filename
-    out_fn = os.path.basename(json_file).replace(".json", "."+imgtype)
-    lbl_pil.save(os.path.join(out_dir, out_fn))
+    lbl_pil.save(out_fn)
 
 
 # Example directories to test
