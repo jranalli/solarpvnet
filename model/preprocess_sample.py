@@ -1,15 +1,16 @@
-import os
-import shutil
-
 from utils.generate_blank_json import generate_blank_json_dir
 from utils.json_to_dataset import json_to_binary
 from utils.slice_dataset_tiles import slice_image
 from utils.fileio import files_of_type
+from utils.delete_blanks import delete_blank_tiles
 
 
 def preprocess_files():
     mydir = "c:\\nycdata\\sample_dataset\\"
     mymaskdir = "c:\\nycdata\\sample_dataset_mask\\"
+
+    tile_dir = "c:\\nycdata\\sample_dataset\\tiles"
+    mask_tile_dir = "c:\\nycdata\\sample_dataset\\mask_tiles"
 
     generate_blank_json_dir(mydir)
     fns = files_of_type(mydir, "*.json")
@@ -18,21 +19,13 @@ def preprocess_files():
 
     fns = files_of_type(mydir, "*.png")
     for fn in fns:
-        slice_image(fn, 625, 625)
+        slice_image(fn, 625, 625, tile_dir)
 
     fns = files_of_type(mymaskdir, "*.png")
     for fn in fns:
-        slice_image(fn, 625, 625)
+        slice_image(fn, 625, 625, mask_tile_dir)
 
-    fns = files_of_type(mydir, "*_*.png")
-    for fn in fns:
-        d = os.path.dirname(fn)
-        shutil.move(fn, os.path.join(d+"_tiles", os.path.basename(fn)))
-
-    fns = files_of_type(mymaskdir, "*_*.png")
-    for fn in fns:
-        d = os.path.dirname(fn)
-        shutil.move(fn, os.path.join(d+"_tiles", os.path.basename(fn)))
+    delete_blank_tiles(tile_dir, mask_tile_dir, maxfrac=0, seed=None)
 
 
 def preprocess_xy_images(image_list, mask_list, size=(576, 576)):
