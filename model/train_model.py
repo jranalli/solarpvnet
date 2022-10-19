@@ -1,4 +1,4 @@
-import glob
+import glob, os
 # import argparse
 #
 # import tensorflow as tf
@@ -10,12 +10,10 @@ from keras.callbacks import ModelCheckpoint, CSVLogger
 from keras.optimizers import Adam, SGD
 
 
-
 import segmentation_models as sm
 
 
-import preprocess_sample
-
+from model.preprocess_sample import preprocess_xy_images
 
 
 def get_augmented(
@@ -34,13 +32,15 @@ def get_augmented(
     ):
     """
     Copied from keras_unet: https://github.com/karolzak/keras-unet
+    Duplicated here just to reduce dependencies
+
+    Note that because get_augmented is only used for the training data, this
+    may be one cause of validation loss being lower than training loss.
 
     Parameters
     ----------
     X_train
     Y_train
-    X_val
-    Y_val
     batch_size
     seed
     data_gen_args
@@ -49,7 +49,8 @@ def get_augmented(
     -------
 
     """
-    # Train data, provide the same seed and keyword arguments to the fit and flow methods
+    # Train data, provide the same seed and keyword arguments to the fit and
+    # flow methods
     X_datagen = ImageDataGenerator(**data_gen_args)
     Y_datagen = ImageDataGenerator(**data_gen_args)
     X_datagen.fit(X_train, augment=True, seed=seed)
@@ -64,47 +65,56 @@ def get_augmented(
     train_generator = zip(X_train_augmented, Y_train_augmented)
     return train_generator
 
-MODEL_IMAGE_SIZE = 576
-seed = 42
-backbone = "resnet34"
-inputpath = "c:\\nycdata\\sample_dataset_tiles\\"
-maskpath = "c:\\nycdata\\sample_dataset_mask_tiles\\"
-weightfile = "c:\\nycdata\\test_weights.h5"
-logfile = "c:\\nycdata\\test_log.csv"
 
-def main():
-    # parser = argparse.ArgumentParser(
-    #     formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    # )
-    # parser.add_argument('train_data', help='input annotated directory')
-    # parser.add_argument('weight_file', help='weight file')
-    # parser.add_argument('train_log', help='training log file')
-    # parser.add_argument('--backbone', help='model backbone', default="resnet34")
-    # parser.add_argument('--seed', help='random seed for cross validation', default=0)
-    # parser.add_argument('--final_weight_file', help='final weight file', default=None)
-    # args = parser.parse_args()
+# Questions:
+#   - Should we try tuning the learning rate:
+#       https://pyimagesearch.com/2019/08/05/keras-learning-rate-finder/
+#   - Should we use Freeze_encoder? Batchnorm? Monte Carlo Dropout?
 
-    size = MODEL_IMAGE_SIZE
 
+def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
+               backbone="resnet34", seed=42, imsize=576, val_frac=0.1):
+    """
+
+    Parameters
+    ----------
+    input_dir
+    mask_dir
+    log_file
+    weight_file
+    final_weight_file
+    backbone
+    seed
+    imsize
+    val_frac
+
+    Returns
+    -------
+
+    """
     # Get the list of all input/output files
-    orgs = glob.glob(inputpath + "*.png")
-    masks = glob.glob(maskpath + "*.png")
+    images = glob.glob(os.path.join(input_dir, "*.png"))
+    masks = glob.glob(os.path.join(mask_dir, "*.png"))
 
     # Load and split the data
-    x, y = preprocess_sample.preprocess_xy_images(orgs, masks, (size, size))
-    x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=0.1, random_state=seed)
+    print("==== Load and Split Data ====")
+    x, y = preprocess_xy_images(images, masks, (imsize, imsize))
+    x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=val_frac,
+                                                      random_state=seed)
     del x, y  # Free up memory
 
+    assert y_val.shape == x_val.shape
+    assert y_train.shape == x_train.shape
     print("x_train: ", x_train.shape)
-    print("y_train: ", y_train.shape)
     print("x_val: ", x_val.shape)
-    print("y_val: ", y_val.shape)
 
     # Preprocess the inputs via segmentation_model
+    print("==== Preprocess Data ====")
     preprocess_input = sm.get_preprocessing(backbone)
     x_train = preprocess_input(x_train)
     x_val = preprocess_input(x_val)
 
+    print("==== Augment Data ====")
     # Augment the data
     # Memory problems on this step
     # For more fixes see:
@@ -114,7 +124,7 @@ def main():
         x_train,
         y_train,
         seed=seed,
-        batch_size=4, #2
+        batch_size=4,  # 2
         data_gen_args=dict(
             rotation_range=30.,
             width_shift_range=0.1,
@@ -128,32 +138,32 @@ def main():
     )
 
     # Setup outputs
-    print("Setup Callback")
-    model_filename = weightfile
+    print("==== Setup Callbacks ====")
+    model_filename = weight_file
     checkpoint_callback = ModelCheckpoint(
         model_filename,
         verbose=1,
         monitor='val_loss',
         save_best_only=True,
     )
-    csv_logger_callback = CSVLogger(logfile, append=True, separator=',')
+    csv_logger_callback = CSVLogger(log_file, append=True, separator=',')
 
     # Create the model
-    print("Create Model")
+    print("==== Create Model ====")
     model = sm.Unet(backbone,
                     encoder_weights='imagenet',
-                    input_shape=(size, size, 3),
+                    input_shape=(imsize, imsize, 3),
                     classes=1,
                     decoder_use_batchnorm=False,
                     encoder_freeze = True)
-    print("Compile Model")
+    print("==== Compile Model ====")
     model.compile(
         optimizer=SGD(lr=0.0009, momentum=0.99),
         loss=sm.losses.bce_jaccard_loss,
         metrics=[sm.metrics.iou_score],
     )
 
-    print("Train")
+    print("==== Train ====")
     history = model.fit(
         train_gen,
         steps_per_epoch=100,
@@ -163,8 +173,18 @@ def main():
         verbose=2
     )
 
+    if final_weight_file is not None:
+        model.save_weights(final_weight_file)
 
-    model.save_weights(model_filename.final_weight_file)
 
 if __name__ == '__main__':
-    main()
+    mysize = 576
+    myseed = 42
+    mybackbone = "resnet34"
+    myinputpath = "c:\\nycdata\\sample_dataset_tiles\\"
+    mymaskpath = "c:\\nycdata\\sample_dataset_mask_tiles\\"
+    myweightfile = "c:\\nycdata\\test_weights.h5"
+    myfinalweightfile = "c:\\nycdata\\test_weights_final.h5"
+    mylogfile = "c:\\nycdata\\test_log.csv"
+
+    train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, mysize)
