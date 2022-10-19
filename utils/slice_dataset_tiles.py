@@ -47,8 +47,6 @@ def slice_image(image_file, slice_width, slice_height, out_dir=None):
                 shutil.move(f, os.path.join(out_dir, thisfn))
 
 
-
-
 # Example directory for testing
 mydir = 'C:\\nycdata\\tst\\'
 

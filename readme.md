@@ -1,7 +1,7 @@
 # Data Source
 
 New York Digital Orthodata
-[Link](http://gis.ny.gov/gateway/mg/)
+[Link](https://gis.ny.gov/gateway/mg/)
 
 # Setup Instructions
 Install [python](https://www.python.org)
