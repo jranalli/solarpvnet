@@ -186,10 +186,10 @@ if __name__ == '__main__':
     mysize = 576
     myseed = 42
     mybackbone = "resnet34"
-    myinputpath = "c:\\nycdata\\sample_subset\\final\\data"
-    mymaskpath = "c:\\nycdata\\sample_subset\\final\\masks"
-    myweightfile = f"c:\\nycdata\\sample_subset\\{mybackbone}_{myseed}_weights.h5"
-    myfinalweightfile = f"c:\\nycdata\\sample_subset\\{mybackbone}_{myseed}_weights.h5"
-    mylogfile = f"c:\\nycdata\\sample_subset\\{mybackbone}_{myseed}_log.h5"
+    myinputpath = f"c:\\nycdata\\sample_subset\\tiles\\train_imgs_{myseed}"
+    mymaskpath = f"c:\\nycdata\\sample_subset\\tiles\\train_masks_{myseed}"
+    myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
+    myfinalweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_final.h5"
+    mylogfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_trainlog.csv"
 
     train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, mysize)

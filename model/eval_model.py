@@ -1,15 +1,8 @@
 import glob
-# import argparse
-#
-# import tensorflow as tf
-# gpu_options = tf.compat.v1.GPUOptions(allow_growth=True)
-# session = tf.compat.v1.InteractiveSession(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options))
-from keras.preprocessing.image import ImageDataGenerator
-from sklearn.model_selection import train_test_split
-from keras.callbacks import ModelCheckpoint, CSVLogger
-from keras.optimizers import Adam, SGD
 
+from keras.optimizers import SGD
 
+import csv
 
 import segmentation_models as sm
 
@@ -20,27 +13,33 @@ import shutil
 import matplotlib.pyplot as plt
 import numpy as np
 
-MODEL_IMAGE_SIZE = 576
 
-backbone = "resnet34"
-inputpath = "c:\\nycdata\\sample_dataset_tiles\\"
-maskpath = "c:\\nycdata\\sample_dataset_mask_tiles\\"
-weightfile = "c:\\nycdata\\old_build_weights.h5"
+def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
+               plot_dir, backbone="resnet34", imsize=576):
+    """
 
-result_dir = "c:\\nycdata\\model_out_old\\"
-plot_dir = "c:\\nycdata\\plot_out_old\\"
+    Parameters
+    ----------
+    input_dir
+    mask_dir
+    weight_file
+    result_file
+    pred_dir
+    plot_dir
+    backbone
+    imsize
 
-def main():
+    Returns
+    -------
 
-
-    size = MODEL_IMAGE_SIZE
+    """
 
     # test and create directories
-    if not os.path.isdir(result_dir):
-        os.makedirs(result_dir)
+    if not os.path.isdir(pred_dir):
+        os.makedirs(pred_dir)
     else:
-        shutil.rmtree(result_dir)
-        os.makedirs(result_dir)
+        shutil.rmtree(pred_dir)
+        os.makedirs(pred_dir)
 
     if plot_dir is not None:
         if not os.path.isdir(plot_dir):
@@ -50,45 +49,74 @@ def main():
             os.makedirs(plot_dir)
 
     # Get the list of all input/output files
-    orgs = glob.glob(inputpath + "*.png")
-    masks = glob.glob(maskpath + "*.png")
+    images = glob.glob(os.path.join(input_dir, "*.png"))
+    masks = glob.glob(os.path.join(mask_dir, "*.png"))
 
-
-    # Load and split the data
-    x, y = preprocess_sample.preprocess_xy_images(orgs, masks, (size, size))
+    # Load and reshape the data
+    print("==== Load and Resize Data ====")
+    x, y = preprocess_sample.preprocess_xy_images(images, masks,
+                                                  (imsize, imsize))
 
     # Create the model and define metrics
+    print("==== Create Model ====")
     model = sm.Unet(backbone,
                     encoder_weights='imagenet',
-                    input_shape=(size, size, 3),
+                    input_shape=(imsize, imsize, 3),
                     classes=1,
                     decoder_use_batchnorm=False)
+    print("==== Compile Model ====")
     model.compile(
         optimizer=SGD(),
         loss=sm.losses.bce_jaccard_loss,
-        metrics=[sm.metrics.iou_score, sm.metrics.precision, sm.metrics.recall],
+        metrics=[sm.metrics.iou_score,
+                 sm.metrics.precision,
+                 sm.metrics.recall,
+                 sm.metrics.f1_score],
     )
 
-    # Load the model and make predictions
-    model_filename = weightfile
-    model.load_weights(model_filename)
+    # Load the model meights
+    print("==== Load Weights ====")
+    model.load_weights(weight_file)
 
+    # Perform the metric evaluation
+    print("==== Perform Evaluation ====")
+    res = model.evaluate(x, y, batch_size=16, verbose=1)
+
+    # Write to file
+    print("==== Save Evaluation ====")
+    csv_cols = ["weight file"] + list(model.metrics_names)
+    csv_row = [os.path.basename(weight_file)] + list(res)
+
+    print(csv_cols)
+    print(csv_row)
+
+    with open(result_file, 'w', newline="") as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(csv_cols)
+        writer.writerow(csv_row)
+
+    # Perform the prediction (images)
+    print("==== Perform Predictions ====")
     pred_imgs = model.predict(x, batch_size=16)
     pred_imgs = reshape_arr(pred_imgs)
 
     x = reshape_arr(x)
     y = reshape_arr(y)
 
+    # Save plots and images
+    print("==== Save Predictions ====")
     figsize = 7
     cols = 4
     alpha = 0.5
 
-    for im_id, imname in enumerate(orgs):
+    for im_id, imname in enumerate(images):
         img_name = os.path.basename(imname)
-        plt.imsave(os.path.join(result_dir, img_name), pred_imgs[im_id], cmap=plt.cm.gray)
+        plt.imsave(os.path.join(pred_dir, img_name), pred_imgs[im_id],
+                   cmap=plt.cm.gray)
 
         if plot_dir is not None:
-            fig, axes = plt.subplots(1, cols, figsize=(cols * figsize, figsize))
+            fig, axes = plt.subplots(1, cols,
+                                     figsize=(cols * figsize, figsize))
             axes[0].set_title("original", fontsize=15)
             axes[1].set_title("ground truth", fontsize=15)
             axes[2].set_title("prediction", fontsize=15)
@@ -101,8 +129,10 @@ def main():
             axes[2].imshow(pred_imgs[im_id], cmap=get_cmap(pred_imgs))
             axes[2].set_axis_off()
             axes[3].imshow(x[im_id], cmap=get_cmap(x))
-            axes[3].imshow(mask_to_red(zero_pad_mask(pred_imgs[im_id], desired_size=size)),
-                           cmap=get_cmap(pred_imgs), alpha=alpha)
+            axes[3].imshow(mask_to_red(zero_pad_mask(pred_imgs[im_id],
+                                                     desired_size=imsize)),
+                           cmap=get_cmap(pred_imgs),
+                           alpha=alpha)
             axes[3].set_axis_off()
             fig.savefig(os.path.join(plot_dir, img_name))
 
@@ -134,17 +164,30 @@ def get_cmap(arr):
 
 
 def mask_to_red(mask):
-    '''
+    """
     Converts binary segmentation mask from white to red color.
     Also adds alpha channel to make black background transparent.
-    '''
+    """
     img_size = mask.shape[0]
-    c1 = mask.reshape(img_size,img_size)
-    c2 = np.zeros((img_size,img_size))
-    c3 = np.zeros((img_size,img_size))
-    c4 = mask.reshape(img_size,img_size)
+    c1 = mask.reshape(img_size, img_size)
+    c2 = np.zeros((img_size, img_size))
+    c3 = np.zeros((img_size, img_size))
+    c4 = mask.reshape(img_size, img_size)
     return np.stack((c1, c2, c3, c4), axis=-1)
 
 
 if __name__ == '__main__':
-    main()
+    mysize = 576
+
+    mybackbone = "resnet34"
+    myseed = 42
+
+    myimages = f"c:\\nycdata\\sample_subset\\tiles\\test_imgs_{myseed}"
+    mymasks = f"c:\\nycdata\\sample_subset\\tiles\\test_imgs_{myseed}"
+    myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
+
+    mypreddir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\pred"
+    myplotdir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\plot"
+    myresultfile = "c:\\nycdata\\sample_subset\\results\\performance.csv"
+    eval_model(myimages, mymasks, myweightfile, myresultfile, mypreddir,
+               myplotdir, backbone=mybackbone, imsize=mysize)
