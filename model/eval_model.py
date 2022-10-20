@@ -1,10 +1,8 @@
 import glob
 
-from keras.optimizers import SGD
+
 
 import csv
-
-import segmentation_models as sm
 
 
 from model.preprocess_sample import preprocess_xy_images
@@ -12,6 +10,14 @@ import os
 import shutil
 import matplotlib.pyplot as plt
 import numpy as np
+
+from keras.preprocessing.image import ImageDataGenerator
+from sklearn.model_selection import train_test_split
+from keras.callbacks import ModelCheckpoint, CSVLogger
+from keras.optimizers import Adam, SGD
+
+
+import segmentation_models as sm
 
 
 def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
