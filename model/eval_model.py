@@ -140,6 +140,7 @@ def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
                            alpha=alpha)
             axes[3].set_axis_off()
             fig.savefig(os.path.join(plot_dir, img_name))
+            plt.close(fig)
 
 
 def zero_pad_mask(mask, desired_size):
