@@ -76,7 +76,7 @@ def get_augmented(
 
 
 def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
-               backbone="resnet34", seed=42, imsize=576, val_frac=0.1):
+               backbone="resnet34", seed=42, imsize=576, val_frac=0.1, epochs=350):
     """
 
     Parameters
@@ -90,6 +90,7 @@ def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
     seed
     imsize
     val_frac
+    epochs
 
     Returns
     -------
@@ -172,7 +173,7 @@ def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
     history = model.fit(
         train_gen,
         steps_per_epoch=100,
-        epochs=350,
+        epochs=epochs,
         validation_data=(x_val, y_val),
         callbacks=[checkpoint_callback, csv_logger_callback],
         verbose=2
