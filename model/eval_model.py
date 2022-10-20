@@ -7,7 +7,7 @@ import csv
 import segmentation_models as sm
 
 
-import preprocess_sample
+from model.preprocess_sample import preprocess_xy_images
 import os
 import shutil
 import matplotlib.pyplot as plt
@@ -54,8 +54,7 @@ def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
 
     # Load and reshape the data
     print("==== Load and Resize Data ====")
-    x, y = preprocess_sample.preprocess_xy_images(images, masks,
-                                                  (imsize, imsize))
+    x, y = preprocess_xy_images(images, masks, (imsize, imsize))
 
     # Create the model and define metrics
     print("==== Create Model ====")
