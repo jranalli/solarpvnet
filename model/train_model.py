@@ -13,6 +13,9 @@ from keras.optimizers import Adam, SGD
 import segmentation_models as sm
 
 
+from livelossplot import PlotLossesKeras
+
+
 from model.preprocess_sample import preprocess_xy_images
 
 
@@ -103,10 +106,12 @@ def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
                                                       random_state=seed)
     del x, y  # Free up memory
 
-    assert y_val.shape == x_val.shape
-    assert y_train.shape == x_train.shape
+    # assert y_val.shape == x_val.shape
+    # assert y_train.shape == x_train.shape
     print("x_train: ", x_train.shape)
+    print("y_train: ", y_train.shape)
     print("x_val: ", x_val.shape)
+    print("y_val: ", y_val.shape)
 
     # Preprocess the inputs via segmentation_model
     print("==== Preprocess Data ====")
@@ -181,10 +186,10 @@ if __name__ == '__main__':
     mysize = 576
     myseed = 42
     mybackbone = "resnet34"
-    myinputpath = "c:\\nycdata\\sample_dataset_tiles\\"
-    mymaskpath = "c:\\nycdata\\sample_dataset_mask_tiles\\"
-    myweightfile = "c:\\nycdata\\test_weights.h5"
-    myfinalweightfile = "c:\\nycdata\\test_weights_final.h5"
-    mylogfile = "c:\\nycdata\\test_log.csv"
+    myinputpath = "c:\\nycdata\\sample_subset\\final\\data"
+    mymaskpath = "c:\\nycdata\\sample_subset\\final\\masks"
+    myweightfile = f"c:\\nycdata\\sample_subset\\{mybackbone}_{myseed}_weights.h5"
+    myfinalweightfile = f"c:\\nycdata\\sample_subset\\{mybackbone}_{myseed}_weights.h5"
+    mylogfile = f"c:\\nycdata\\sample_subset\\{mybackbone}_{myseed}_log.h5"
 
     train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, mysize)
