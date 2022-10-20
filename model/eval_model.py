@@ -182,7 +182,7 @@ if __name__ == '__main__':
     myseed = 42
 
     myimages = f"c:\\nycdata\\sample_subset\\tiles\\test_imgs_{myseed}"
-    mymasks = f"c:\\nycdata\\sample_subset\\tiles\\test_imgs_{myseed}"
+    mymasks = f"c:\\nycdata\\sample_subset\\tiles\\test_masks_{myseed}"
     myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
 
     mypreddir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\pred"
