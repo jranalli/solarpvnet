@@ -3,7 +3,7 @@ import os
 from PIL import Image
 import numpy as np
 
-from utils.fileio import verify_dir, is_dir_empty, clear_dir
+from utils.fileio import verify_dir, is_dir_empty, clear_dir, files_of_type
 
 
 def zip_to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png",
@@ -91,6 +91,32 @@ def zip_to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png",
                         alpha = Image.fromarray(a[:, :, -1].astype('uint8'))
                         alpha.save(os.path.join(ir_dir, fn_short +
                                                 "." + imgtype))
+
+
+def tif_to_png(mydir, overwrite=False, verbose=True, delete=True):
+    """
+
+    Parameters
+    ----------
+    mydir
+    overwrite
+    verbose
+    delete
+    """
+    fns = files_of_type(mydir, "*.tif")
+    for fn in fns:
+        if verbose:
+            print(fn)
+        with Image.open(fn) as f:
+            pfn = fn.replace(".tif", ".png")
+            if os.path.exists(pfn) and not overwrite:
+                print(f"File exists, skipping: {pfn}")
+                continue
+            else:
+                f.save(pfn)
+
+        if delete:
+            os.remove(fn)
 
 
 # Example dirs for testing

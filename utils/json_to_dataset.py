@@ -1,3 +1,4 @@
+import csv
 import os
 import math
 import uuid
@@ -171,6 +172,65 @@ def json_to_binary(json_file, mask_dir, label_name_to_value,
 
     # Generate the output filename
     lbl_pil.save(out_fn)
+
+
+def json_to_dataset_cal(big_json, big_csv, imnames):
+    imname_col = 9
+    rawnumcol = 0
+    idcol = 1
+
+    with open(big_json) as f:
+        data = json.load(f)['polygons']
+
+    # data[rownum] gets the entry
+    # data[rownum]['polygon_id'] is the id
+    # data[rownum]['polygon_vertices_pixels'] is the shape
+
+    for imname in imnames:
+        imname_base = os.path.basename(imname)
+
+        poly_nums = []
+        poly_ids = []
+        with open(big_csv) as f:
+            rd = csv.reader(f)
+            for row in rd:
+                if row[imname_col] == os.path.splitext(imname_base)[0]:
+                    poly_nums.append(int(row[rawnumcol]))
+                    poly_ids.append(int(row[idcol]))
+
+        shapes = []
+        for poly_num, poly_id in zip(poly_nums, poly_ids):
+            assert data[poly_num]["polygon_id"] == poly_id
+
+            shapes.append(data[poly_num]['polygon_vertices_pixels'])
+
+        shapelist = []
+        for shape in shapes:
+            shapedata = {
+                "label": "pv",
+                "points": shape,
+                "group_id": None,
+                "shape_type": "polygon",
+                "flags": {}
+            }
+            shapelist.append(shapedata)
+
+        with PIL.Image.open(imname) as im:
+            width, height = im.size
+
+        json_file = imname.replace(".png", ".json")
+        with open(json_file, "w") as file:
+            labelme_json = {
+                "version": "5.0.1",
+                "flags": {},
+                "shapes": shapelist,
+                "imagePath": imname_base,
+                "imageData": None,
+                "imageHeight": height,
+                "imageWidth": width
+            }
+            json_str = json.dumps(labelme_json, indent=2)
+            file.write(json_str)
 
 
 # Example directories to test

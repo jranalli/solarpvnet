@@ -12,20 +12,20 @@ mybackbones = ["resnet18"]
 
 pathroot = 'f:\\solardnn'
 
-sites = ["NYC", "Germany"]
+sites = ["NYC", "Germany", "France_ign", "France_google"]
 for site in sites:
     runroot = os.path.join(pathroot, site)
     resultroot = os.path.join(runroot, "results")
 
     dataroot = os.path.join(runroot, "tiles")
-    img_root = os.path.join(dataroot, "imgs")
-    mask_root = os.path.join(dataroot, "masks")
+    img_root = os.path.join(dataroot, "img")
+    mask_root = os.path.join(dataroot, "mask")
 
     for myseed in myseeds:
         for mybackbone in mybackbones:
 
-            myinputpath = os.path.join(dataroot, f"train_imgs_{myseed}")
-            mymaskpath = os.path.join(dataroot, f"train_masks_{myseed}")
+            myinputpath = os.path.join(dataroot, f"train_img_{myseed}")
+            mymaskpath = os.path.join(dataroot, f"train_mask_{myseed}")
             myweightfile = os.path.join(resultroot, f"{mybackbone}_{myseed}_weights_best.h5")
             myfinalweightfile = os.path.join(resultroot, f"{mybackbone}_{myseed}_weights_final.h5")
             mylogfile = os.path.join(resultroot, f"{mybackbone}_{myseed}_trainlog.csv")
@@ -57,8 +57,8 @@ for site in sites:
 
                 myweightfile = os.path.join(modelroot, f"{mybackbone}_{myseed}_weights_best.h5")
 
-                myimages = os.path.join(dataroot, f"test_imgs_{myseed}")
-                mymasks = os.path.join(dataroot, f"test_masks_{myseed}")
+                myimages = os.path.join(dataroot, f"test_img_{myseed}")
+                mymasks = os.path.join(dataroot, f"test_mask_{myseed}")
 
                 mypreddir = os.path.join(resultroot, f"results_{site}_predby{model}_{mybackbone}_{myseed}\\pred")
                 myplotdir = os.path.join(resultroot, f"results_{site}_predby{model}_{mybackbone}_{myseed}\\plots")
