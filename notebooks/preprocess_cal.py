@@ -3,7 +3,7 @@ import utils
 from utils.fileio import files_of_type
 
 roots = ["D:\\solardnn\\Cal_Oxnard\\", "D:\\solardnn\\Cal_Stockton\\"]
-split_sizes = [500]
+split_sizes = [500, 625]
 
 for root, split_size in zip(roots, split_sizes):
 
