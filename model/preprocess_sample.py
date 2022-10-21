@@ -90,8 +90,8 @@ def split_test_train(image_dir, mask_dir, output_root, test_ratio=0.1,
         image_dir.
     output_root: str
         Root path to directory where files will be output. Directory names
-        coming out will be: test_imgs_SEED, test_masks_SEED, train_imgs_SEED,
-        train_masks_SEED
+        coming out will be: test_img_SEED, test_mask_SEED, train_img_SEED,
+        train_mask_SEED
     test_ratio: float (default 0.1)
         Fraction of images that should be made the test data
     seed: int (default None)
@@ -105,10 +105,10 @@ def split_test_train(image_dir, mask_dir, output_root, test_ratio=0.1,
     """
     # Make sure our output directories exist
     verify_dir(output_root)
-    test_im_dir = os.path.join(output_root, f"test_imgs_{seed}")
-    test_msk_dir = os.path.join(output_root, f"test_masks_{seed}")
-    train_im_dir = os.path.join(output_root, f"train_imgs_{seed}")
-    train_msk_dir = os.path.join(output_root, f"train_masks_{seed}")
+    test_im_dir = os.path.join(output_root, f"test_img_{seed}")
+    test_msk_dir = os.path.join(output_root, f"test_mask_{seed}")
+    train_im_dir = os.path.join(output_root, f"train_img_{seed}")
+    train_msk_dir = os.path.join(output_root, f"train_mask_{seed}")
 
     for idir in [test_im_dir, test_msk_dir, train_im_dir, train_msk_dir]:
         verify_dir(idir)

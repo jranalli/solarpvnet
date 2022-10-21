@@ -51,3 +51,10 @@ Some detailed LabelMe examples [here](https://datagen.tech/guides/image-annotati
 - Use `slice_dataset_tiles.py` to slice the images into proper sizes that will be used by the CNN
 
 
+# Labelled Neural Net Datasets
+## New York
+Created here from [New York Orthodata](https://gis.ny.gov/gateway/mg/)
+## France
+From public [Zenodo Repository](https://zenodo.org/record/7059985)
+## California
+Originating at [Figshare Repository](https://figshare.com/articles/dataset/Distributed_Solar_Photovoltaic_Array_Location_and_Extent_Data_Set_for_Remote_Sensing_Object_Identification/3385780/1?file=5286613)

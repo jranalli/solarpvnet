@@ -188,8 +188,8 @@ if __name__ == '__main__':
     mybackbone = "resnet34"
     myseed = 42
 
-    myimages = f"c:\\nycdata\\sample_subset\\tiles\\test_imgs_{myseed}"
-    mymasks = f"c:\\nycdata\\sample_subset\\tiles\\test_masks_{myseed}"
+    myimages = f"c:\\nycdata\\sample_subset\\tiles\\test_img_{myseed}"
+    mymasks = f"c:\\nycdata\\sample_subset\\tiles\\test_mask_{myseed}"
     myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
 
     mypreddir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\pred"

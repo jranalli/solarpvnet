@@ -187,8 +187,8 @@ if __name__ == '__main__':
     mysize = 576
     myseed = 42
     mybackbone = "resnet34"
-    myinputpath = f"c:\\nycdata\\sample_subset\\tiles\\train_imgs_{myseed}"
-    mymaskpath = f"c:\\nycdata\\sample_subset\\tiles\\train_masks_{myseed}"
+    myinputpath = f"c:\\nycdata\\sample_subset\\tiles\\train_img_{myseed}"
+    mymaskpath = f"c:\\nycdata\\sample_subset\\tiles\\train_mask_{myseed}"
     myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
     myfinalweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_final.h5"
     mylogfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_trainlog.csv"

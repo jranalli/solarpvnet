@@ -64,7 +64,40 @@ def delete_blank_tiles(imgdir, maskdir, maxfrac=0,
             basefn = os.path.basename(f)
 
             os.remove(os.path.join(maskdir, basefn))
-            os.remove(os.path.join(imgdir, basefn))
+
+        align_datasets(maskdir, imgdir)
+
+
+def align_datasets(folder_a, folder_b, imgtype="png"):
+    """
+    Take two folders, search through and delete any files that appear in only
+    one. Caution! Files will be deleted!
+
+    Parameters
+    ----------
+    folder_a: str
+        Full path to first folder
+    folder_b: str
+        Full path to second folder
+    imgtype: str (default "png")
+        The extension of the filetype to look for
+    """
+
+    # Get a list of all files in each location
+    fns_a = files_of_type(folder_a, "*." + imgtype)
+    fns_b = files_of_type(folder_b, "*." + imgtype)
+
+    bns_a = [os.path.basename(f) for f in fns_a]
+    bns_b = [os.path.basename(f) for f in fns_b]
+
+    # remove in each direction
+    for fn in fns_a:
+        if os.path.basename(fn) not in bns_b:
+            os.remove(fn)
+
+    for fn in fns_b:
+        if os.path.basename(fn) not in bns_a:
+            os.remove(fn)
 
 
 # Sample run
