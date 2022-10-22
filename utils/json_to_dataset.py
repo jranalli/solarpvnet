@@ -202,7 +202,7 @@ def json_to_dataset_cal(big_json, big_csv, imnames):
         for poly_num, poly_id in zip(poly_nums, poly_ids):
             assert data[poly_num]["polygon_id"] == poly_id
             this_shape = data[poly_num]['polygon_vertices_pixels']
-            if np.size(this_shape) > 2:
+            if np.size(this_shape) > 4:  # Must have more than 2 pts
                 shapes.append(this_shape)
 
         shapelist = []
