@@ -2,8 +2,10 @@ import os
 import utils
 from utils.fileio import files_of_type
 
-roots = ["D:\\solardnn\\Cal_Oxnard\\", "D:\\solardnn\\Cal_Stockton\\"]
-split_sizes = [500, 625]
+#roots = ["F:\\solardnn\\Cal_Oxnard\\", "F:\\solardnn\\Cal_Stockton\\", "F:\\solardnn\\Cal_Fresno\\"]
+#split_sizes = [500, 625, 625]
+roots = ["F:\\solardnn\\Cal_Fresno\\"]
+split_sizes = [625]
 
 for root, split_size in zip(roots, split_sizes):
 
@@ -13,8 +15,8 @@ for root, split_size in zip(roots, split_sizes):
     tile_dir = os.path.join(root, "tiles\\img")
     mask_tile_dir = os.path.join(root, "tiles\\mask")
 
-    cal_json = "D:\\solardnn\\Cal\\3385780_alt\\SolarArrayPolygons.json"
-    cal_csv = "D:\\solardnn\\Cal\\3385780_alt\\polygonDataExceptVertices.csv"
+    cal_json = "f:\\solardnn\\Cal\\3385780_alt\\SolarArrayPolygons.json"
+    cal_csv = "f:\\solardnn\\Cal\\3385780_alt\\polygonDataExceptVertices.csv"
 
 
     print("== Convert TIF to PNG== ")
@@ -30,6 +32,7 @@ for root, split_size in zip(roots, split_sizes):
     print("== JSON to Mask ==")
     fns = files_of_type(mydir, "*.json")
     for fn in fns:
+        print(fn)
         utils.json_to_binary(fn, mymaskdir,
                        label_name_to_value={"_background_": 0, "maybe": 0,
                                             "notpv": 0, "pv": 255})

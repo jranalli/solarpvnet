@@ -62,16 +62,18 @@ def preprocess_xy_images(image_list, mask_list, size=(576, 576)):
         im_Y = Image.open(mask).resize(size)
         Y_list.append(np.array(im_Y))
 
-    x = np.asarray(X_list)
-    y = np.asarray(Y_list)
+    x = np.asarray(X_list, dtype=np.float32)
+    y = np.asarray(Y_list, dtype=np.float32)
 
     # Normalize
-    x = np.asarray(x, dtype=np.float32) / 255.0
-    y = np.asarray(y, dtype=np.float32) / np.max(y)
+    x /= 255.0
+    y /= np.max(y)
 
     # Reshape X to (n_examples, size, size, 3[RGB])
-    x = x.reshape(x.shape[0], x.shape[1], x.shape[2], 3)
-    y = y.reshape(y.shape[0], y.shape[1], y.shape[2], 1)
+    x.shape = (x.shape[0], x.shape[1], x.shape[2], 3)
+    y.shape = (y.shape[0], y.shape[1], y.shape[2], 1)
+    #x = x.reshape(x.shape[0], x.shape[1], x.shape[2], 3)
+    #y = y.reshape(y.shape[0], y.shape[1], y.shape[2], 1)
 
     return x, y
 
