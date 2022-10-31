@@ -13,10 +13,10 @@ from keras.optimizers import Adam, SGD
 import segmentation_models as sm
 
 
-from livelossplot import PlotLossesKeras
+# from livelossplot import PlotLossesKeras
 
 
-from model.preprocess_sample import preprocess_xy_images
+from model.dataset_manipulation import reshape_inputs
 
 
 def get_augmented(
@@ -75,34 +75,41 @@ def get_augmented(
 #   - Should we use Freeze_encoder? Batchnorm? Monte Carlo Dropout?
 
 
-def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
-               backbone="resnet34", seed=42, imsize=576, val_frac=0.1, epochs=350):
+def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
+               backbone="resnet34", seed=42, img_size=(576, 576), val_frac=0.1,
+               epochs=350):
     """
 
     Parameters
     ----------
-    input_dir
-    mask_dir
-    log_file
-    weight_file
-    final_weight_file
-    backbone
-    seed
-    imsize
-    val_frac
-    epochs
-
-    Returns
-    -------
-
+    img_dir: str
+        Directory with test images to predict
+    mask_dir: str
+        Directory with test masks
+    log_file: str
+        Full location of logging file
+    weight_file: str
+        Full location of file to save best weights
+    end_weight_file: str
+        Full location of file to save final weights even if not best
+    backbone: str
+        Model backbone
+    seed: int
+        Random number generator seed
+    img_size: tuple
+        Image size in (xxx, yyy)
+    val_frac: float
+        Fraction of data to split for validation
+    epochs: int
+        Number of epochs for training
     """
     # Get the list of all input/output files
-    images = glob.glob(os.path.join(input_dir, "*.png"))
+    images = glob.glob(os.path.join(img_dir, "*.png"))
     masks = glob.glob(os.path.join(mask_dir, "*.png"))
 
     # Load and split the data
     print("==== Load and Split Data ====")
-    x, y = preprocess_xy_images(images, masks, (imsize, imsize))
+    x, y = reshape_inputs(images, masks, img_size)
     x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=val_frac,
                                                       random_state=seed)
     del x, y  # Free up memory
@@ -158,10 +165,10 @@ def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
     print("==== Create Model ====")
     model = sm.Unet(backbone,
                     encoder_weights='imagenet',
-                    input_shape=(imsize, imsize, 3),
+                    input_shape=(img_size[0], img_size[1], 3),
                     classes=1,
                     decoder_use_batchnorm=False,
-                    encoder_freeze = True)
+                    encoder_freeze=True)
     print("==== Compile Model ====")
     model.compile(
         optimizer=SGD(lr=0.0009, momentum=0.99),
@@ -179,8 +186,8 @@ def train_unet(input_dir, mask_dir, log_file, weight_file, final_weight_file,
         verbose=2
     )
 
-    if final_weight_file is not None:
-        model.save_weights(final_weight_file)
+    if end_weight_file is not None:
+        model.save_weights(end_weight_file)
 
 
 if __name__ == '__main__':
@@ -193,4 +200,4 @@ if __name__ == '__main__':
     myfinalweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_final.h5"
     mylogfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_trainlog.csv"
 
-    train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, mysize)
+    train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, (mysize,mysize))

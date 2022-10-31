@@ -6,8 +6,7 @@ import numpy as np
 from utils.fileio import files_of_type
 
 
-def delete_blank_tiles(imgdir, maskdir, maxfrac=0,
-                       imgtype="png", seed=None):
+def delete_blank_tiles(img_dir, mask_dir, maxfrac=0, seed=None, img_ext="png"):
     """
     Look at a combined dataset of label masks and corresponding images. Find
     the masks that are blank and remove them from both parts of the dataset.
@@ -16,15 +15,15 @@ def delete_blank_tiles(imgdir, maskdir, maxfrac=0,
     
     Parameters
     ----------
-    imgdir: str
+    img_dir: str
         Full path where the image files exist
-    maskdir: str
+    mask_dir: str
         Full path where the mask files exist (all filenames must repeat in 
         imgdir!)
     maxfrac: float (default 0)
         The fraction of the total dataset (between 0 and 1) that should be
         represented by blank files. Set to 0 to delete all blank files
-    imgtype: str (default 'png')
+    img_ext: str (default 'png')
         String of the image filetype
     seed: int (default None)
         A random seed that can be set to produce repeatable data. Caution! This
@@ -32,8 +31,8 @@ def delete_blank_tiles(imgdir, maskdir, maxfrac=0,
     """
 
     # Get a list of all files in each location
-    maskfns = files_of_type(maskdir, "*." + imgtype)
-    imgfns = files_of_type(maskdir, "*." + imgtype)
+    maskfns = files_of_type(mask_dir, "*." + img_ext)
+    imgfns = files_of_type(mask_dir, "*." + img_ext)
 
     # Require that all the masks have a corresponding image file
     imgs = [os.path.basename(f) for f in imgfns]
@@ -63,12 +62,12 @@ def delete_blank_tiles(imgdir, maskdir, maxfrac=0,
         for f in drops:
             basefn = os.path.basename(f)
 
-            os.remove(os.path.join(maskdir, basefn))
+            os.remove(os.path.join(mask_dir, basefn))
 
-        align_datasets(maskdir, imgdir)
+        align_datasets(mask_dir, img_dir)
 
 
-def align_datasets(folder_a, folder_b, imgtype="png"):
+def align_datasets(folder_a, folder_b, img_ext="png"):
     """
     Take two folders, search through and delete any files that appear in only
     one. Caution! Files will be deleted!
@@ -79,13 +78,13 @@ def align_datasets(folder_a, folder_b, imgtype="png"):
         Full path to first folder
     folder_b: str
         Full path to second folder
-    imgtype: str (default "png")
+    img_ext: str (default "png")
         The extension of the filetype to look for
     """
 
     # Get a list of all files in each location
-    fns_a = files_of_type(folder_a, "*." + imgtype)
-    fns_b = files_of_type(folder_b, "*." + imgtype)
+    fns_a = files_of_type(folder_a, "*." + img_ext)
+    fns_b = files_of_type(folder_b, "*." + img_ext)
 
     bns_a = [os.path.basename(f) for f in fns_a]
     bns_b = [os.path.basename(f) for f in fns_b]

@@ -1,4 +1,4 @@
-from model.preprocess_sample import split_test_train
+from model.dataset_manipulation import split_test_train
 from model.train_model import train_unet
 from model.eval_model import eval_model
 import os
@@ -10,7 +10,9 @@ myseeds = [0]
 mysize = 576
 mybackbones = ["resnet18"]
 
-pathroot = 'f:\\solardnn'
+drive = "f:"
+
+pathroot = os.path.join(drive, 'solardnn')
 
 sites = ["NYC", "Germany", "France_ign", "France_google"]
 for site in sites:
@@ -34,8 +36,9 @@ for site in sites:
                 print(f"Skipping {site}-{mybackbone}-{myseed}")
                 continue
 
-            split_test_train(img_root, mask_root, dataroot, seed=myseed, test_ratio=my_test_ratio)
-            train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, mysize, epochs=200)
+            split_test_train(img_root, mask_root, dataroot,
+                             test_ratio=my_test_ratio, seed=myseed)
+            train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, (mysize, mysize), epochs=200)
 
 ### Eval #####
 
@@ -43,7 +46,7 @@ myseeds = [0]
 mysize = 576
 mybackbones = ["resnet18"]
 
-pathroot = 'f:\\solardnn'
+pathroot = os.path.join(drive, 'solardnn')
 
 sites = ["NYC", "Germany"]
 for site in sites:
@@ -66,6 +69,6 @@ for site in sites:
 
                 eval_model(myimages, mymasks, myweightfile, myresultfile,
                            mypreddir, myplotdir, backbone=mybackbone,
-                           imsize=mysize)
+                           img_size=(mysize, mysize))
 
                 gc.collect()

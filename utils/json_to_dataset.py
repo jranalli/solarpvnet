@@ -115,8 +115,8 @@ def shapes_to_label(img_shape, shapes, label_name_to_value):
     return cls, ins
 
 
-def json_to_binary(json_file, mask_dir, label_name_to_value,
-                   imgtype="png", overwrite=False):
+def labelme_json_to_binary(json_file, mask_dir, label_name_to_value,
+                           img_ext="png", overwrite=False):
     """
     Adapted from labelme.cli.json_to_dataset
             - https://github.com/wkentaro/labelme
@@ -133,7 +133,7 @@ def json_to_binary(json_file, mask_dir, label_name_to_value,
     label_name_to_value: dict
         a dict connecting polygon label names to the numeric id that should be
         displayed in the output array
-    imgtype: str (default "png")
+    img_ext: str (default "png")
         str of the file extension for the output image.
     overwrite: bool (default False)
         If output file exists, should the operation be run anyway?
@@ -146,7 +146,7 @@ def json_to_binary(json_file, mask_dir, label_name_to_value,
 
     # Generate the output directory and filename
     verify_dir(out_dir)
-    out_fn = os.path.basename(json_file).replace(".json", "." + imgtype)
+    out_fn = os.path.basename(json_file).replace(".json", "." + img_ext)
     out_fn = os.path.join(out_dir, out_fn)
     if os.path.exists(out_fn):
         if not overwrite:
@@ -174,36 +174,64 @@ def json_to_binary(json_file, mask_dir, label_name_to_value,
     lbl_pil.save(out_fn)
 
 
-def json_to_dataset_cal(big_json, big_csv, imnames):
+def cal_to_labelme(img_list, dataset_json, dataset_csv):
+    """
+    Convert shape notation files from the California dataset to labelme shape
+    files.
+
+    Cal dataset at:
+    https://figshare.com/articles/dataset/Distributed_Solar_Photovoltaic_Array_Location_and_Extent_Data_Set_for_Remote_Sensing_Object_Identification/3385780/1?file=5286613
+
+    Parameters
+    ----------
+    dataset_json: str
+        Location of "SolarArrayPolygons.json" file. Contains all poly vertices.
+    dataset_csv: str
+        Location of "polygonDataExceptVertices.csv". Contains a more quickly
+        searchable map between filename and polygon info.
+    img_list: list
+        A list of filenames of the images to process
+
+    Returns
+    -------
+
+    """
     imname_col = 9
     rawnumcol = 0
     idcol = 1
 
-    with open(big_json) as f:
+    width = height = None
+
+    with open(dataset_json) as f:
         data = json.load(f)['polygons']
 
+    # data is the polygon info, which is keyed by
     # data[rownum] gets the entry
     # data[rownum]['polygon_id'] is the id
     # data[rownum]['polygon_vertices_pixels'] is the shape
 
-    for imname in imnames:
+    for imname in img_list:
         imname_base = os.path.basename(imname)
 
+        # Search the CSV file for polygons that go with this image. Extract the
+        # polygon row number and ID number.
         poly_nums = []
         poly_ids = []
-        with open(big_csv) as f:
+        with open(dataset_csv) as f:
             rd = csv.reader(f)
             for row in rd:
                 if row[imname_col] == os.path.splitext(imname_base)[0]:
                     poly_nums.append(int(row[rawnumcol]))
                     poly_ids.append(int(row[idcol]))
 
+        # Use the extracted polygon info from the CSV to get the vertices from
+        # the JSON file. Build into a list of polygons
         shapes = []
         for poly_num, poly_id in zip(poly_nums, poly_ids):
             assert data[poly_num]["polygon_id"] == poly_id
-
             shapes.append(data[poly_num]['polygon_vertices_pixels'])
 
+        # Build a labelme compatible dict for each shape.
         shapelist = []
         for shape in shapes:
             shapedata = {
@@ -215,9 +243,12 @@ def json_to_dataset_cal(big_json, big_csv, imnames):
             }
             shapelist.append(shapedata)
 
-        with PIL.Image.open(imname) as im:
-            width, height = im.size
+        # Get the image dimensions if they haven't been set yet
+        if width is None or height is None:
+            with PIL.Image.open(imname) as im:
+                width, height = im.size
 
+        # Create a labelme json and insert all the data. Save it.
         json_file = imname.replace(".png", ".json")
         with open(json_file, "w") as file:
             labelme_json = {
@@ -241,4 +272,4 @@ if __name__ == "__main__":
     label_id_dict = {"_background_": 0, "maybe": 0, "notpv": 0, "pv": 255}
 
     for fn in files_of_type(target_dir, "*.json"):
-        json_to_binary(fn, ot_dir, label_id_dict)
+        labelme_json_to_binary(fn, ot_dir, label_id_dict)

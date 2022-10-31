@@ -6,7 +6,7 @@ import numpy as np
 from utils.fileio import verify_dir, is_dir_empty, clear_dir, files_of_type
 
 
-def zip_to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png",
+def zip_to_png(source_zip, rgb_dir, ir_dir=None, img_ext="png",
                overwrite=False, verbose=True):
     """
     Process ZIP files from New York City GIS data download
@@ -24,7 +24,7 @@ def zip_to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png",
     ir_dir: str or None (default None)
         full path output directory for the alpha images. If None, alpha images
         are not saved.
-    imgtype: str (default "png")
+    img_ext: str (default "png")
         Extension of the image file name to save as. Must be supported by PIL.
     overwrite: bool (default False)
         If output path(s) exist, should the operation be run anyway?
@@ -84,26 +84,31 @@ def zip_to_png(source_zip, rgb_dir, ir_dir=None, imgtype="png",
                     # a PNG file
                     # Layers 0-2 are RGB
                     im = Image.fromarray(a[:, :, :-1].astype('uint8'))
-                    im.save(os.path.join(rgb_dir, fn_short + "." + imgtype))
+                    im.save(os.path.join(rgb_dir, fn_short + "." + img_ext))
 
                     # Layer 3 is Infrared
                     if ir_dir is not None:
                         alpha = Image.fromarray(a[:, :, -1].astype('uint8'))
                         alpha.save(os.path.join(ir_dir, fn_short +
-                                                "." + imgtype))
+                                                "." + img_ext))
 
 
-def tif_to_png(mydir, overwrite=False, verbose=True, delete=True):
+def tif_to_png(tif_dir, overwrite=False, verbose=True, delete=False):
     """
+    Convert a directory of tif images to pngs
 
     Parameters
     ----------
-    mydir
-    overwrite
-    verbose
-    delete
+    tif_dir: str
+        directory where tif images are stored
+    overwrite: bool (default: False)
+        Overwrite, or skip if exists
+    verbose: bool (default: True)
+        Print filenames while running
+    delete: bool (default: False)
+        Delete tif file when done?
     """
-    fns = files_of_type(mydir, "*.tif")
+    fns = files_of_type(tif_dir, "*.tif")
     for fn in fns:
         if verbose:
             print(fn)

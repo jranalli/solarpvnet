@@ -30,7 +30,7 @@ def generate_blank_json_file(json_file, shape):
         file.write(json_str)
 
 
-def generate_blank_json_dir(somedir, json_dir=None, img_ext=".png"):
+def generate_blank_json_dir(target_dir, json_dir=None, img_ext=".png"):
     """
     Loop over a directory and look for any files that don't have a
     corresponding JSON file. Create a blank JSON for any with missing JSON
@@ -38,7 +38,7 @@ def generate_blank_json_dir(somedir, json_dir=None, img_ext=".png"):
 
     Parameters
     ----------
-    somedir: str
+    target_dir: str
         full path of the directory to search
     json_dir: str or None (default None)
         full path of directory that contains the JSON files to compare with. If
@@ -47,9 +47,9 @@ def generate_blank_json_dir(somedir, json_dir=None, img_ext=".png"):
         Image file extension to search for
     """
     if json_dir is None:
-        json_dir = somedir
+        json_dir = target_dir
 
-    files = files_of_type(somedir, "*"+img_ext)
+    files = files_of_type(target_dir, "*" + img_ext)
 
     for f in files:
         jsonfn = os.path.join(json_dir, os.path.basename(f).replace(img_ext,

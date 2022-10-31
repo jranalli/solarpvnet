@@ -5,7 +5,7 @@ import glob
 import csv
 
 
-from model.preprocess_sample import preprocess_xy_images
+from model.dataset_manipulation import reshape_inputs
 import os
 import shutil
 import matplotlib.pyplot as plt
@@ -20,24 +20,28 @@ from keras.optimizers import Adam, SGD
 import segmentation_models as sm
 
 
-def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
-               plot_dir, backbone="resnet34", imsize=576):
+def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
+               plot_dir, backbone="resnet34", img_size=(576, 576)):
     """
 
     Parameters
     ----------
-    input_dir
-    mask_dir
-    weight_file
-    result_file
-    pred_dir
-    plot_dir
-    backbone
-    imsize
-
-    Returns
-    -------
-
+    img_dir: str
+        Directory with test images to predict
+    mask_dir: str
+        Directory with test masks
+    weight_file: str
+        Full location of saved weights
+    result_file: str
+        Full location of file to save results to
+    pred_dir: str
+        Full location of path to save prediction images
+    plot_dir: str
+        Full location of path to save plot images
+    backbone: str
+        Model backbone
+    img_size: tuple
+        Image size in (xxx, yyy)
     """
 
     # test and create directories
@@ -55,18 +59,18 @@ def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
             os.makedirs(plot_dir)
 
     # Get the list of all input/output files
-    images = glob.glob(os.path.join(input_dir, "*.png"))
+    images = glob.glob(os.path.join(img_dir, "*.png"))
     masks = glob.glob(os.path.join(mask_dir, "*.png"))
 
     # Load and reshape the data
     print("==== Load and Resize Data ====")
-    x, y = preprocess_xy_images(images, masks, (imsize, imsize))
+    x, y = reshape_inputs(images, masks, img_size)
 
     # Create the model and define metrics
     print("==== Create Model ====")
     model = sm.Unet(backbone,
                     encoder_weights='imagenet',
-                    input_shape=(imsize, imsize, 3),
+                    input_shape=(img_size[0], img_size[1], 3),
                     classes=1,
                     decoder_use_batchnorm=False)
     print("==== Compile Model ====")
@@ -135,7 +139,7 @@ def eval_model(input_dir, mask_dir, weight_file, result_file, pred_dir,
             axes[2].set_axis_off()
             axes[3].imshow(x[im_id], cmap=get_cmap(x))
             axes[3].imshow(mask_to_red(zero_pad_mask(pred_imgs[im_id],
-                                                     desired_size=imsize)),
+                                                     desired_size=img_size[0])),
                            cmap=get_cmap(pred_imgs),
                            alpha=alpha)
             axes[3].set_axis_off()
@@ -196,4 +200,4 @@ if __name__ == '__main__':
     myplotdir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\plot"
     myresultfile = "c:\\nycdata\\sample_subset\\results\\performance.csv"
     eval_model(myimages, mymasks, myweightfile, myresultfile, mypreddir,
-               myplotdir, backbone=mybackbone, imsize=mysize)
+               myplotdir, backbone=mybackbone, img_size=(mysize, mysize))
