@@ -229,7 +229,9 @@ def cal_to_labelme(img_list, dataset_json, dataset_csv):
         shapes = []
         for poly_num, poly_id in zip(poly_nums, poly_ids):
             assert data[poly_num]["polygon_id"] == poly_id
-            shapes.append(data[poly_num]['polygon_vertices_pixels'])
+            this_shape = data[poly_num]['polygon_vertices_pixels']
+            if np.size(this_shape) > 4:  # Must have more than 2 pts
+                shapes.append(this_shape)
 
         # Build a labelme compatible dict for each shape.
         shapelist = []
