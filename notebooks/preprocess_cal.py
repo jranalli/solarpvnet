@@ -1,6 +1,7 @@
 import os
 import utils
 from utils.fileio import files_of_type
+from model.dataset_manipulation import limit_dataset_size, reshape_and_save
 
 drive = "D:\\"
 
@@ -8,6 +9,11 @@ roots = ["solardnn\\Cal_Oxnard\\",
          "solardnn\\Cal_Stockton\\",
          "solardnn\\Cal_Fresno\\"]
 split_sizes = [500, 625, 625]
+
+seed = 42
+n_subset = 1000
+
+model_size = 576
 
 for root, split_size in zip(roots, split_sizes):
     root = os.path.join(drive, root)
@@ -17,6 +23,8 @@ for root, split_size in zip(roots, split_sizes):
 
     tile_dir = os.path.join(root, "tiles\\img")
     mask_tile_dir = os.path.join(root, "tiles\\mask")
+
+    subset_dir = os.path.join(root, "tile_subsets")
 
     cal_json = os.path.join(drive, "solardnn\\Cal\\3385780_alt\\SolarArrayPolygons.json")
     cal_csv = os.path.join(drive, "solardnn\\Cal\\3385780_alt\\polygonDataExceptVertices.csv")
@@ -41,15 +49,19 @@ for root, split_size in zip(roots, split_sizes):
                                                           "notpv": 0,
                                                           "pv": 255})
 
-    print("== Slice Images ==")
-    fns = files_of_type(img_dir, "*.png")
-    for fn in fns:
-        utils.slice_image(fn, split_size, split_size, tile_dir)
-
-    print("== Slice Masks ==")
-    fns = files_of_type(mask_dir, "*.png")
-    for fn in fns:
-        utils.slice_image(fn, split_size, split_size, mask_tile_dir)
+    # print("== Slice Images ==")
+    # fns = files_of_type(img_dir, "*.png")
+    # for fn in fns:
+    #     utils.slice_image(fn, split_size, split_size, tile_dir)
+    #
+    # print("== Slice Masks ==")
+    # fns = files_of_type(mask_dir, "*.png")
+    # for fn in fns:
+    #     utils.slice_image(fn, split_size, split_size, mask_tile_dir)
 
     print("== Delete Blanks ==")
     utils.delete_blank_tiles(tile_dir, mask_tile_dir, maxfrac=0, seed=None)
+
+    print("== Make Subsets ==")
+    limit_dataset_size(tile_dir, mask_tile_dir, subset_dir, n_limit=n_subset,
+                       seed=seed)

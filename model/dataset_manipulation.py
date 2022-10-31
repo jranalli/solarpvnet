@@ -143,3 +143,93 @@ def split_test_train(img_dir, mask_dir, output_root, test_ratio=0.1, seed=None,
         # Copy files to correct directory
         shutil.copy(im_file, im_file.replace(img_dir, out_im))
         shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk))
+
+
+def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
+                       img_ext="png", overwrite=False):
+    """
+    Split up a dataset into chunks of a fixed size.
+
+    Parameters
+    ----------
+    img_dir: str
+        Full path to directory containing the images
+    mask_dir: str
+        Full path to directory containing masks (must match filenames in
+        image_dir.
+    output_root: str
+        Root path to directory where files will be output. Directory names
+        coming out will be: img_setSET_seedSEED, mask_setSET_seedSEED, remainder
+        will be marked setfinal
+    n_limit: int
+        Number of images for each subset
+    seed: int (default None)
+        Random seed for the random number generator. If None, no seed
+        will be used. Caution! This will affect the global
+        numpy.random.seed()!
+    overwrite: bool (default False)
+        Should files be overwritten in the target destinations?
+    img_ext: str (default "png")
+        The file extension of the images in the directory
+    """
+
+    # Set seed
+    if seed is not None:
+        np.random.seed(seed)
+
+    # Init output dir and counter
+    verify_dir(output_root)
+    i = 0
+
+    # Get all files
+    all_fn = files_of_type(img_dir, "*." + img_ext)
+
+    while len(all_fn) > n_limit:
+
+        # choose files to mark as test
+        subset = list(np.random.choice(all_fn, n_limit, replace=False))
+
+        # get out dir names
+        out_img_dir = os.path.join(output_root, f"img_set{i}_seed{seed}")
+        out_msk_dir = os.path.join(output_root, f"mask_set{i}_seed{seed}")
+
+        for i_dir in [out_img_dir, out_msk_dir]:
+            verify_dir(i_dir)
+            if not is_dir_empty(i_dir):
+                if not overwrite:
+                    print("Output path not empty. Skipping to next operation.")
+                    print(i_dir)
+                    continue
+                else:
+                    clear_dir(i_dir)
+
+        # copy files
+        for f in subset:
+            all_fn.remove(f)
+            im_file = f
+            msk_file = f.replace(img_dir, mask_dir)
+            shutil.copy(im_file, im_file.replace(img_dir, out_img_dir))
+            shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk_dir))
+
+        i += 1
+
+    # Copy the remainder
+    out_img_dir = os.path.join(output_root, f"img_setfinal_seed{seed}")
+    out_msk_dir = os.path.join(output_root, f"mask_setfinal_seed{seed}")
+
+    for i_dir in [out_img_dir, out_msk_dir]:
+        verify_dir(i_dir)
+        if not is_dir_empty(i_dir):
+            if not overwrite:
+                print("Output path not empty. Skipping to next operation.")
+                print(i_dir)
+                continue
+            else:
+                clear_dir(i_dir)
+
+    # copy files
+    for f in all_fn:
+        im_file = f
+        msk_file = f.replace(img_dir, mask_dir)
+        shutil.copy(im_file, im_file.replace(img_dir, out_img_dir))
+        shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk_dir))
