@@ -5,7 +5,7 @@ import os
 import gc
 
 ### Train #####
-my_test_ratio = 0.1
+my_test_ratio = 0.2
 myseeds = [0]
 mysize = 576
 mybackbones = ["resnet18"]
@@ -14,7 +14,7 @@ drive = "f:"
 
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = ["NYC", "Germany", "France_ign", "France_google"]
+sites = ["NYC", "Germany", "Cal_Stockton", "Cal_Oxnard"] #, "France_ign", "France_google", "Cal_Fresno"]
 for site in sites:
     runroot = os.path.join(pathroot, site)
     resultroot = os.path.join(runroot, "results")
@@ -48,7 +48,7 @@ mybackbones = ["resnet18"]
 
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = ["NYC", "Germany"]
+sites = ["NYC", "Germany", "Cal_Stockton", "Cal_Oxnard"]
 for site in sites:
     for model in sites:
         dataroot = os.path.join(os.path.join(pathroot, site), "tiles")

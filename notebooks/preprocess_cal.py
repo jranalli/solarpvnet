@@ -18,8 +18,8 @@ for root, split_size in zip(roots, split_sizes):
     tile_dir = os.path.join(root, "tiles\\img")
     mask_tile_dir = os.path.join(root, "tiles\\mask")
 
-    cal_json = "D:\\solardnn\\Cal\\3385780_alt\\SolarArrayPolygons.json"
-    cal_csv = "D:\\solardnn\\Cal\\3385780_alt\\polygonDataExceptVertices.csv"
+    cal_json = os.path.join(drive, "solardnn\\Cal\\3385780_alt\\SolarArrayPolygons.json")
+    cal_csv = os.path.join(drive, "solardnn\\Cal\\3385780_alt\\polygonDataExceptVertices.csv")
 
     print("== Convert TIF to PNG== ")
     utils.tif_to_png(img_dir, delete=True)
@@ -34,6 +34,7 @@ for root, split_size in zip(roots, split_sizes):
     print("== JSON to Mask ==")
     fns = files_of_type(img_dir, "*.json")
     for fn in fns:
+        print(fn)
         utils.labelme_json_to_binary(fn, mask_dir,
                                      label_name_to_value={"_background_": 0,
                                                           "maybe": 0,
