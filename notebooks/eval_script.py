@@ -6,17 +6,18 @@ import gc
 
 ### Train #####
 my_test_ratio = 0.2
-myseeds = [0]
+myseeds = [42]
 mysize = 576
-mybackbones = ["resnet18"]
+mybackbones = ["resnet34"]
 subset = 0
 subset_seed = 42
+epochs = 200
 
 drive = "f:"
 
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = ["NYC", "Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google"]  # "Cal_Oxnard" - too few files
+sites = [ "Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google"]  # "Cal_Oxnard" "NYC"- too few files
 for site in sites:
     runroot = os.path.join(pathroot, site)
     resultroot = os.path.join(runroot, "results")
@@ -29,8 +30,8 @@ for site in sites:
     for myseed in myseeds:
         for mybackbone in mybackbones:
 
-            myinputpath = os.path.join(this_run_root, f"train_set{subset}_setseed{subset_seed}_img_{myseed}")
-            mymaskpath = os.path.join(this_run_root, f"train_set{subset}_setseed{subset_seed}_mask_{myseed}")
+            myinputpath = os.path.join(this_run_root, f"train_img_{myseed}")
+            mymaskpath = os.path.join(this_run_root, f"train_mask_{myseed}")
             myweightfile = os.path.join(resultroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_best.h5")
             myfinalweightfile = os.path.join(resultroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_final.h5")
             mylogfile = os.path.join(resultroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_trainlog.csv")
@@ -41,20 +42,20 @@ for site in sites:
 
             split_test_train(img_root, mask_root, this_run_root,
                              test_ratio=my_test_ratio, seed=myseed)
-            train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, (mysize, mysize), epochs=200)
+            train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, (mysize, mysize), epochs=epochs)
 
 ### Eval #####
 
-myseeds = [0]
+myseeds = [42]
 mysize = 576
-mybackbones = ["resnet18"]
+mybackbones = ["resnet34"]
 subset = 0
 subset_seed = 42
 
 drive = "f:"
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = ["NYC", "Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google"]  # "Cal_Oxnard" - too few files
+sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google"]  # "Cal_Oxnard" "NYC"- too few files
 for site in sites:
     for model in sites:
         dataroot = os.path.join(os.path.join(pathroot, site), "tile_subsets")
@@ -69,8 +70,6 @@ for site in sites:
 
                 myimages = os.path.join(this_run_root, f"test_img_{myseed}")
                 mymasks = os.path.join(this_run_root, f"test_mask_{myseed}")
-                myimages = os.path.join(this_run_root, f"test_set{subset}_setseed{subset_seed}_img_{myseed}")
-                mymasks = os.path.join(this_run_root, f"test_set{subset}_setseed{subset_seed}_mask_{myseed}")
 
                 mypreddir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\pred")
                 myplotdir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\plots")
