@@ -6,7 +6,7 @@ import glob, os
 # session = tf.compat.v1.InteractiveSession(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options))
 from keras.preprocessing.image import ImageDataGenerator
 from sklearn.model_selection import train_test_split
-from keras.callbacks import ModelCheckpoint, CSVLogger
+from keras.callbacks import ModelCheckpoint, CSVLogger, EarlyStopping
 from keras.optimizers import Adam, SGD
 
 
@@ -77,7 +77,7 @@ def get_augmented(
 
 def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
                backbone="resnet34", seed=42, img_size=(576, 576), val_frac=0.1,
-               epochs=350):
+               epochs=350, freeze_encoder=True):
     """
 
     Parameters
@@ -102,6 +102,8 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
         Fraction of data to split for validation
     epochs: int
         Number of epochs for training
+    freeze_encoder: bool (default=True)
+        Freeze the encoder?
     """
     # Get the list of all input/output files
     images = glob.glob(os.path.join(img_dir, "*.png"))
@@ -161,6 +163,10 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
     )
     csv_logger_callback = CSVLogger(log_file, append=True, separator=',')
 
+    early_callback = EarlyStopping(monitor="val_loss", patience=10,
+                                   restore_best_weights=True)
+
+
     # Create the model
     print("==== Create Model ====")
     model = sm.Unet(backbone,
@@ -168,7 +174,7 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
                     input_shape=(img_size[0], img_size[1], 3),
                     classes=1,
                     decoder_use_batchnorm=False,
-                    encoder_freeze=True)
+                    encoder_freeze=freeze_encoder)
     print("==== Compile Model ====")
     model.compile(
         optimizer=SGD(lr=0.0009, momentum=0.99),
@@ -182,7 +188,7 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
         steps_per_epoch=100,
         epochs=epochs,
         validation_data=(x_val, y_val),
-        callbacks=[checkpoint_callback, csv_logger_callback],
+        callbacks=[checkpoint_callback, csv_logger_callback, early_callback],
         verbose=2
     )
 
