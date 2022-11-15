@@ -100,6 +100,11 @@ def split_test_train(img_dir, mask_dir, output_root, test_ratio=0.1, seed=None,
         Should files be overwritten in the target destinations?
     img_ext: str (default "png")
         The file extension of the images in the directory
+
+    Returns
+    ----------
+    Output directories organized as a tuple as follows:
+        (train_im_dir, train_msk_dir, test_im_dir, test_msk_dir)
     """
     # Make sure our output directories exist
     verify_dir(output_root)
@@ -143,6 +148,8 @@ def split_test_train(img_dir, mask_dir, output_root, test_ratio=0.1, seed=None,
         # Copy files to correct directory
         shutil.copy(im_file, im_file.replace(img_dir, out_im))
         shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk))
+
+    return train_im_dir, train_msk_dir, test_im_dir, test_msk_dir
 
 
 def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
