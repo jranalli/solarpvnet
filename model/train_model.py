@@ -77,7 +77,7 @@ def get_augmented(
 
 def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
                backbone="resnet34", seed=42, img_size=(576, 576), val_frac=0.1,
-               epochs=350, freeze_encoder=True):
+               epochs=350, freeze_encoder=True, patience=0):
     """
 
     Parameters
@@ -101,10 +101,15 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
     val_frac: float
         Fraction of data to split for validation
     epochs: int
-        Number of epochs for training
+        Maximum number of epochs for training
     freeze_encoder: bool (default=True)
         Freeze the encoder?
+    patience: int (default 0)
+        Patience for early stopping. If set to 0, the strict number of epochs
+        will be used. If greater than zero, will stop early after N epochs
+        without improvement in the validation loss.
     """
+
     # Get the list of all input/output files
     images = glob.glob(os.path.join(img_dir, "*.png"))
     masks = glob.glob(os.path.join(mask_dir, "*.png"))
@@ -163,9 +168,12 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
     )
     csv_logger_callback = CSVLogger(log_file, append=True, separator=',')
 
-    early_callback = EarlyStopping(monitor="val_loss", patience=10,
-                                   restore_best_weights=True)
+    callbacks = [checkpoint_callback, csv_logger_callback]
 
+    if patience > 0:
+        early_callback = EarlyStopping(monitor="val_loss", patience=patience,
+                                       restore_best_weights=True)
+        callbacks.append(early_callback)
 
     # Create the model
     print("==== Create Model ====")
@@ -188,7 +196,7 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
         steps_per_epoch=100,
         epochs=epochs,
         validation_data=(x_val, y_val),
-        callbacks=[checkpoint_callback, csv_logger_callback, early_callback],
+        callbacks=callbacks,
         verbose=2
     )
 
