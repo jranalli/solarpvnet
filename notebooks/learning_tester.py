@@ -4,53 +4,58 @@ from model.eval_model import eval_model
 import os
 import gc
 
-### Train #####
-my_test_ratio = 0.2
-myseed = 42
-mysize = 576
-mybackbone = "resnet34"
-subset = 0
-subset_seed = myseed
-epochs = 200
 
-freeze = True
-patience = 0
+def run_A():
+    ### Train #####
+    my_test_ratio = 0.2
+    myseed = 42
+    mysize = 576
+    mybackbone = "resnet34"
+    subset = 0
+    subset_seed = myseed
+    epochs = 200
 
-drive = "f:"
+    freeze = True
+    patience = 5
 
-pathroot = os.path.join(drive, 'solardnn')
+    drive = "f:"
 
-site = "Germany"
+    pathroot = os.path.join(drive, 'solardnn')
 
-runroot = os.path.join(pathroot, site)
+    site = "Germany"
 
-resultroot = os.path.join(runroot, "results_lrn_demo")
+    runroot = os.path.join(pathroot, site)
 
-dataroot = os.path.join(runroot, "tile_subsets")
-this_run_root = os.path.join(dataroot, f"set{subset}_seed{subset_seed}")
-img_root = os.path.join(dataroot, f"img_set{subset}_seed{subset_seed}")
-mask_root = os.path.join(dataroot, f"mask_set{subset}_seed{subset_seed}")
+    resultroot = os.path.join(runroot, "results_lrn_demo")
 
-
-trn_im, trn_msk, tst_im, tst_msk = split_test_train(img_root, mask_root,
-                                                    this_run_root,
-                                                    test_ratio=my_test_ratio,
-                                                    seed=myseed)
+    dataroot = os.path.join(runroot, "tile_subsets")
+    this_run_root = os.path.join(dataroot, f"set{subset}_seed{subset_seed}")
+    img_root = os.path.join(dataroot, f"img_set{subset}_seed{subset_seed}")
+    mask_root = os.path.join(dataroot, f"mask_set{subset}_seed{subset_seed}")
 
 
-myweightfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}_weights_best.h5")
-myfinalweightfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}_weights_final.h5")
-mylogfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}_trainlog.csv")
+    trn_im, trn_msk, tst_im, tst_msk = split_test_train(img_root, mask_root,
+                                                        this_run_root,
+                                                        test_ratio=my_test_ratio,
+                                                        seed=myseed)
 
 
-train_unet(trn_im, trn_msk, mylogfile, myweightfile, myfinalweightfile,
-           mybackbone, myseed, (mysize, mysize),
-           epochs=epochs, freeze_encoder=True)
+    myweightfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}_weights_best.h5")
+    myfinalweightfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}_weights_final.h5")
+    mylogfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}_trainlog.csv")
 
-mypreddir = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}\\pred")
-myplotdir = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}\\plots")
-myresultfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}\\evallog.csv")
 
-eval_model(tst_im, trn_im, myweightfile, myresultfile,
-           mypreddir, myplotdir, backbone=mybackbone,
-           img_size=(mysize, mysize))
+    train_unet(trn_im, trn_msk, mylogfile, myweightfile, myfinalweightfile,
+               mybackbone, myseed, (mysize, mysize),
+               epochs=epochs, freeze_encoder=True, patience=patience)
+
+    mypreddir = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}\\pred")
+    myplotdir = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}\\plots")
+    myresultfile = os.path.join(resultroot, f"demo_freeze{freeze}_patience{patience}\\evallog.csv")
+
+    eval_model(tst_im, tst_msk, myweightfile, myresultfile,
+               mypreddir, myplotdir, backbone=mybackbone,
+               img_size=(mysize, mysize))
+
+if __name__ == "__main__":
+    run_A()
