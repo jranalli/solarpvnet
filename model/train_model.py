@@ -171,8 +171,9 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
     callbacks = [checkpoint_callback, csv_logger_callback]
 
     if patience > 0:
-        early_callback = EarlyStopping(monitor="val_loss", patience=patience,
-                                       restore_best_weights=True)
+        early_callback = EarlyStopping(monitor="loss", patience=patience,
+                                       restore_best_weights=True,
+                                       verbose=1)
         callbacks.append(early_callback)
 
     # Create the model
@@ -185,7 +186,7 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
                     encoder_freeze=freeze_encoder)
     print("==== Compile Model ====")
     model.compile(
-        optimizer=SGD(lr=0.0009, momentum=0.99),
+        optimizer=SGD(lr=0.0008, momentum=0.99),
         loss=sm.losses.bce_jaccard_loss,
         metrics=[sm.metrics.iou_score],
     )
@@ -193,7 +194,7 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
     print("==== Train ====")
     history = model.fit(
         train_gen,
-        steps_per_epoch=100,
+        steps_per_epoch=x_train.shape[0]//4,
         epochs=epochs,
         validation_data=(x_val, y_val),
         callbacks=callbacks,

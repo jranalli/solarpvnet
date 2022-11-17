@@ -119,7 +119,7 @@ def split_test_train(img_dir, mask_dir, output_root, test_ratio=0.1, seed=None,
             if not overwrite:
                 print("Output path not empty. Skipping entire operation.")
                 print(i_dir)
-                return
+                return train_im_dir, train_msk_dir, test_im_dir, test_msk_dir
             else:
                 clear_dir(i_dir)
 
