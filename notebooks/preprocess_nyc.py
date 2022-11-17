@@ -39,16 +39,16 @@ for fn in fns:
                                                       "pv": 255})
 
 
-# print("== Slice Images ==")
-# fns = files_of_type(img_dir, "*.png")
-# for fn in fns:
-#     utils.slice_image(fn, split_size, split_size, tile_dir)
-#
-#
-# print("== Slice Masks ==")
-# fns = files_of_type(mask_dir, "*.png")
-# for fn in fns:
-#     utils.slice_image(fn, split_size, split_size, mask_tile_dir)
+print("== Slice Images ==")
+fns = files_of_type(img_dir, "*.png")
+for fn in fns:
+    utils.slice_image(fn, split_size, split_size, tile_dir)
+
+
+print("== Slice Masks ==")
+fns = files_of_type(mask_dir, "*.png")
+for fn in fns:
+    utils.slice_image(fn, split_size, split_size, mask_tile_dir)
 
 
 print("== Delete Blanks ==")
