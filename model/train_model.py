@@ -77,7 +77,8 @@ def get_augmented(
 
 def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
                backbone="resnet34", seed=42, img_size=(576, 576), val_frac=0.1,
-               epochs=350, freeze_encoder=True, patience=0):
+               epochs=350, freeze_encoder=True, patience=0, batchnorm=False,
+               overwrite=False):
     """
 
     Parameters
@@ -108,7 +109,15 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
         Patience for early stopping. If set to 0, the strict number of epochs
         will be used. If greater than zero, will stop early after N epochs
         without improvement in the validation loss.
+    batchnorm: bool (default=False)
+        Use batch norm?
+    overwrite: bool (default=False)
+        Overwrite existing data?
     """
+
+    if os.path.exists(weight_file) and not overwrite:
+        print("Weights exist, skipping training...")
+        return
 
     # Get the list of all input/output files
     images = glob.glob(os.path.join(img_dir, "*.png"))
@@ -182,7 +191,7 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
                     encoder_weights='imagenet',
                     input_shape=(img_size[0], img_size[1], 3),
                     classes=1,
-                    decoder_use_batchnorm=False,
+                    decoder_use_batchnorm=batchnorm,
                     encoder_freeze=freeze_encoder)
     print("==== Compile Model ====")
     model.compile(
