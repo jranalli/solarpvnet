@@ -13,11 +13,15 @@ subset = 0
 subset_seed = 42
 epochs = 200
 
+patience = 10
+norm = True
+freeze = True
+
 drive = "f:"
 
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = [ "Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google"]  # "Cal_Oxnard" "NYC"- too few files
+sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC"]  # "Cal_Oxnard" "NYC"- too few files
 for site in sites:
     runroot = os.path.join(pathroot, site)
     resultroot = os.path.join(runroot, "results")
@@ -42,7 +46,10 @@ for site in sites:
 
             split_test_train(img_root, mask_root, this_run_root,
                              test_ratio=my_test_ratio, seed=myseed)
-            train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, (mysize, mysize), epochs=epochs)
+            train_unet(myinputpath, mymaskpath, mylogfile, myweightfile,
+                       myfinalweightfile, mybackbone, myseed, (mysize, mysize),
+                       epochs=epochs, freeze_encoder=freeze, batchnorm=norm,
+                       patience=patience)
 
 ### Eval #####
 
@@ -52,10 +59,12 @@ mybackbones = ["resnet34"]
 subset = 0
 subset_seed = 42
 
+weights = 'best'
+
 drive = "f:"
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google"]  # "Cal_Oxnard" "NYC"- too few files
+sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC"]  # "Cal_Oxnard" "NYC"- too few files
 for site in sites:
     for model in sites:
         dataroot = os.path.join(os.path.join(pathroot, site), "tile_subsets")
@@ -66,7 +75,10 @@ for site in sites:
         for myseed in myseeds:
             for mybackbone in mybackbones:
 
-                myweightfile = os.path.join(modelroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_best.h5")
+                if weights == 'best':
+                    myweightfile = os.path.join(modelroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_best.h5")
+                elif weights == 'final':
+                    myweightfile = os.path.join(resultroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_final.h5")
 
                 myimages = os.path.join(this_run_root, f"test_img_{myseed}")
                 mymasks = os.path.join(this_run_root, f"test_mask_{myseed}")
