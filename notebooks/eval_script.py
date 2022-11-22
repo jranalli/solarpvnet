@@ -89,6 +89,6 @@ for site in sites:
 
                 eval_model(myimages, mymasks, myweightfile, myresultfile,
                            mypreddir, myplotdir, backbone=mybackbone,
-                           img_size=(mysize, mysize))
+                           img_size=(mysize, mysize), batchnorm=norm)
 
                 gc.collect()

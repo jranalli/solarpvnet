@@ -21,7 +21,7 @@ import segmentation_models as sm
 
 
 def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
-               plot_dir, backbone="resnet34", img_size=(576, 576)):
+               plot_dir, backbone="resnet34", img_size=(576, 576), batchnorm=False):
     """
 
     Parameters
@@ -42,6 +42,8 @@ def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
         Model backbone
     img_size: tuple
         Image size in (xxx, yyy)
+    batchnorm: bool (default: False)
+        Use batchnorm
     """
 
     # test and create directories
@@ -72,7 +74,7 @@ def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
                     encoder_weights='imagenet',
                     input_shape=(img_size[0], img_size[1], 3),
                     classes=1,
-                    decoder_use_batchnorm=False)
+                    decoder_use_batchnorm=batchnorm)
     print("==== Compile Model ====")
     model.compile(
         optimizer=SGD(),
