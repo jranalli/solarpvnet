@@ -149,6 +149,49 @@ def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
             plt.close(fig)
 
 
+def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q"]):
+    from PIL import Image
+    img_paths = glob.glob(os.path.join(im_src, "*.png"))
+    imgs = [os.path.basename(img_path) for img_path in img_paths]
+
+    titles = ['img', 'truth']
+    [titles.append(mdl) for mdl in model_names]
+
+    figsize = 7
+    cols = len(titles)
+
+    for img in imgs:
+
+        fig, axes = plt.subplots(1, cols, figsize=(cols * figsize, figsize))
+        for axis, title in zip(axes, titles):
+            axis.set_axis_off()
+            axis.set_title(title, fontsize=15)
+
+        tiles = []
+        img_dat = Image.open(os.path.join(im_src, img))
+        truth_dat = Image.open(os.path.join(truth_dir, img))
+
+        tiles.append(img_dat)
+        tiles.append(truth_dat)
+
+        for pred_dir in pred_dirs:
+            msk = Image.open(os.path.join(pred_dir, img))
+            msk = msk.resize(img_dat.size)
+            tiles.append(msk)
+
+        for i, (axis, tile) in enumerate(zip(axes, tiles)):
+            if i==0:
+                axis.imshow(tile)
+            else:
+                tile = tile.convert("P")
+                axis.imshow(tiles[0], alpha=0.5)
+                axis.imshow(mask_to_red(np.asarray(tile)), alpha=0.5)
+                tile.close()
+        tiles[0].close()
+        fig.savefig(os.path.join(out_dir, img))
+        plt.close(fig)
+
+
 def zero_pad_mask(mask, desired_size):
     pad = (desired_size - mask.shape[0]) // 2
     padded_mask = np.pad(mask, pad, mode="constant")
