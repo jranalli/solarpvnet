@@ -240,3 +240,29 @@ def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
         msk_file = f.replace(img_dir, mask_dir)
         shutil.copy(im_file, im_file.replace(img_dir, out_img_dir))
         shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk_dir))
+
+def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000):
+
+    img_path_out = os.path.join(out_path, img_subpath)
+    mask_path_out = os.path.join(out_path, mask_subpath)
+    verify_dir(img_path_out)
+    verify_dir(mask_path_out)
+
+    if not weights:
+        weights = np.ones_like(data_paths)/len(data_paths)
+
+    im_each = np.floor(weights * total_imgs)
+    # Correct for rounding
+    im_each[-1] = total_imgs - sum(im_each[:-1])
+
+    for path, num in zip(data_paths, im_each):
+        img_path = os.path.join(path, img_subpath)
+        mask_path = os.path.join(path, mask_subpath)
+        all_fn = files_of_type(img_path, "*." + img_ext)
+        subset = list(np.random.choice(all_fn, num, replace=False))
+
+        for fn in subset:
+            im_file = fn
+            msk_file = fn.replace(img_subpath, mask_subpath)
+            shutil.copy(im_file, im_file.replace(path, out_path))
+            shutil.copy(msk_file, msk_file.replace(path, out_path))
