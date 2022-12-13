@@ -13,7 +13,8 @@ drive = "f:"
 pathroot = os.path.join(drive, 'solardnn')
 
 sites = ["Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "Germany", "NYC"]  # "Cal_Oxnard"- too few files
-names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q"]
+models = sites + ["combo_dataset"]
+names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"]
 
 loss = pd.DataFrame([],index=sites, columns=sites)
 iou_score = loss.copy(deep=True)
@@ -22,7 +23,7 @@ recall = loss.copy(deep=True)
 f1_score = loss.copy(deep=True)
 
 for site in sites:
-    for model in sites:
+    for model in models:
         i = sites.index(site)
         j = sites.index(model)
 

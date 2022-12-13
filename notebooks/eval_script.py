@@ -21,7 +21,7 @@ drive = "f:"
 
 pathroot = os.path.join(drive, 'solardnn')
 
-sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC"]  # "Cal_Oxnard" "NYC"- too few files
+sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC", "combo_dataset"]  # "Cal_Oxnard" "NYC"- too few files
 for site in sites:
     runroot = os.path.join(pathroot, site)
     resultroot = os.path.join(runroot, "results")
@@ -65,8 +65,9 @@ drive = "f:"
 pathroot = os.path.join(drive, 'solardnn')
 
 sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC"]  # "Cal_Oxnard" "NYC"- too few files
+models = sites + ["combo_dataset"]
 for site in sites:
-    for model in sites:
+    for model in models:
         dataroot = os.path.join(os.path.join(pathroot, site), "tile_subsets")
         this_run_root = os.path.join(dataroot, f"set{subset}_seed{subset_seed}")
         resultroot = os.path.join(pathroot, "results")

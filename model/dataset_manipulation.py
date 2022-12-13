@@ -241,7 +241,12 @@ def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
         shutil.copy(im_file, im_file.replace(img_dir, out_img_dir))
         shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk_dir))
 
-def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000):
+def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000, seed=None):
+
+    # Set seed
+    if seed is not None:
+        np.random.seed(seed)
+
 
     img_path_out = os.path.join(out_path, img_subpath)
     mask_path_out = os.path.join(out_path, mask_subpath)
@@ -249,9 +254,9 @@ def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="ma
     verify_dir(mask_path_out)
 
     if not weights:
-        weights = np.ones_like(data_paths)/len(data_paths)
+        weights = np.ones_like(data_paths, dtype=np.float32)/len(data_paths)
 
-    im_each = np.floor(weights * total_imgs)
+    im_each = np.floor(weights * total_imgs).astype("int")
     # Correct for rounding
     im_each[-1] = total_imgs - sum(im_each[:-1])
 
@@ -266,3 +271,17 @@ def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="ma
             msk_file = fn.replace(img_subpath, mask_subpath)
             shutil.copy(im_file, im_file.replace(path, out_path))
             shutil.copy(msk_file, msk_file.replace(path, out_path))
+
+if __name__ == "__main__":
+    paths = [r"F:\solardnn\Cal_Fresno\tile_subsets\set0_seed42",
+             r"F:\solardnn\Cal_Stockton\tile_subsets\set0_seed42",
+             r"F:\solardnn\France_ign\tile_subsets\set0_seed42",
+             r"F:\solardnn\France_google\tile_subsets\set0_seed42",
+             r"F:\solardnn\Germany\tile_subsets\set0_seed42",
+             r"F:\solardnn\NYC\tile_subsets\set0_seed42"
+             ]
+    img_path = "train_img_42"
+    mask_path = "train_mask_42"
+    out_path=r"F:\solardnn\combo_dataset"
+
+    make_combo_dataset(paths, out_path, img_path, mask_path, total_imgs=800, seed=42)
