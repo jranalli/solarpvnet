@@ -85,7 +85,8 @@ for site in sites:
                 mymasks = os.path.join(this_run_root, f"test_mask_{myseed}")
 
                 mypreddir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\pred")
-                myplotdir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\plots")
+                # myplotdir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\plots")
+                myplotdir = None
                 myresultfile = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}.csv")
 
                 eval_model(myimages, mymasks, myweightfile, myresultfile,
