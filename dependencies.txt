@@ -11,3 +11,8 @@ segmentation-models
 matplotlib
 
 jupyter
+
+
+For summarize_dataset
+pandas
+openpyxl
