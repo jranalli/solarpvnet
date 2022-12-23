@@ -79,13 +79,14 @@ for site in sites:
                 if weights == 'best':
                     myweightfile = os.path.join(modelroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_best.h5")
                 elif weights == 'final':
-                    myweightfile = os.path.join(resultroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_final.h5")
+                    myweightfile = os.path.join(modelroot, f"set{subset}_setseed{subset_seed}_{mybackbone}_{myseed}_weights_final.h5")
 
                 myimages = os.path.join(this_run_root, f"test_img_{myseed}")
                 mymasks = os.path.join(this_run_root, f"test_mask_{myseed}")
 
                 mypreddir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\pred")
-                myplotdir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\plots")
+                # myplotdir = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\plots")
+                myplotdir = None
                 myresultfile = os.path.join(resultroot, f"results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}\\results_set{subset}_{site}_predby{model}_{mybackbone}_{myseed}.csv")
 
                 eval_model(myimages, mymasks, myweightfile, myresultfile,
