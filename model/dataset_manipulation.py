@@ -130,7 +130,7 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
         np.random.seed(seed)
 
     # Get full set of image files
-    all_fn = files_of_type(img_dir, "*." + img_ext)
+    all_fn = files_of_type(img_dir, "*." + img_ext, fullpath=False)
     if n_set is not None and n_set > 0:
         all_fn = list(np.random.choice(all_fn, n_set, replace=False))
     else:
