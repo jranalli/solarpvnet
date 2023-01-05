@@ -74,10 +74,10 @@ def reshape_and_save(img_list, out_dir, size=(576, 576)):
         im.save(os.path.join(out_dir, fn_short))
 
 
-def split_test_train(img_dir, mask_dir, output_root, test_ratio=0.1, seed=None,
+def test_train_valid_split(img_dir, mask_dir, output_root, n_set=1000, test_train_valid=[0.2, 0.72, 0.08], seed=None,
                      img_ext="png", overwrite=False):
     """
-    Separate a test and training dataset.
+    Generate the datasets based on
 
     Parameters
     ----------
@@ -108,48 +108,74 @@ def split_test_train(img_dir, mask_dir, output_root, test_ratio=0.1, seed=None,
     """
     # Make sure our output directories exist
     verify_dir(output_root)
-    test_im_dir = os.path.join(output_root, f"test_img_{seed}")
-    test_msk_dir = os.path.join(output_root, f"test_mask_{seed}")
-    train_im_dir = os.path.join(output_root, f"train_img_{seed}")
-    train_msk_dir = os.path.join(output_root, f"train_mask_{seed}")
+    test_im_file = os.path.join(output_root, f"test_img_{seed}.txt")
+    test_msk_file = os.path.join(output_root, f"test_mask_{seed}.txt")
+    train_im_file = os.path.join(output_root, f"train_img_{seed}.txt")
+    train_msk_file = os.path.join(output_root, f"train_mask_{seed}.txt")
+    valid_im_file = os.path.join(output_root, f"valid_img_{seed}.txt")
+    valid_msk_file = os.path.join(output_root, f"valid_mask_{seed}.txt")
 
-    for i_dir in [test_im_dir, test_msk_dir, train_im_dir, train_msk_dir]:
-        verify_dir(i_dir)
-        if not is_dir_empty(i_dir):
+    #
+    for i_file in [test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file]:
+        if os.path.exists(i_file):
             if not overwrite:
-                print("Output path not empty. Skipping entire operation.")
-                print(i_dir)
-                return train_im_dir, train_msk_dir, test_im_dir, test_msk_dir
-            else:
-                clear_dir(i_dir)
+                print(f"Output file {i_file} exists. Skipping entire operation.")
+                print(output_root)
+                return test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file
+            else:  # Overwrite
+                os.remove(i_file)
 
-    all_fn = files_of_type(img_dir, "*." + img_ext)
-    # Calculate how many blanks we can keep
-    ntest = int(test_ratio * len(all_fn))
-
-    # choose files to mark as test
+    # Set seed if exists
     if seed is not None:
         np.random.seed(seed)
-    test = list(np.random.choice(all_fn, ntest, replace=False))
 
-    # Save files
-    for f in all_fn:
-        im_file = f
-        msk_file = f.replace(img_dir, mask_dir)
+    # Get full set of image files
+    all_fn = files_of_type(img_dir, "*." + img_ext)
+    if n_set is not None and n_set > 0:
+        all_fn = list(np.random.choice(all_fn, n_set, replace=False))
+    else:
+        n_set = len(all_fn)
 
-        # Generate filename depending on whether it is test or train
-        if im_file in test:
-            out_im = test_im_dir
-            out_msk = test_msk_dir
-        else:
-            out_im = train_im_dir
-            out_msk = train_msk_dir
+    # Calculate how many belong in the test data
+    ntest = int(test_train_valid[0] * n_set)
+    ntrain = int(test_train_valid[1] * n_set)
+    nvalid = int(test_train_valid[2] * n_set)
 
-        # Copy files to correct directory
-        shutil.copy(im_file, im_file.replace(img_dir, out_im))
-        shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk))
+    if ntest + ntrain + nvalid != n_set:
+        print("Set does not split evenly, biasing towards train.")
+        ntrain = n_set - ntest - nvalid
 
-    return train_im_dir, train_msk_dir, test_im_dir, test_msk_dir
+    # choose files to mark as test
+    all_fn_cp = all_fn.copy()
+    test = list(np.random.choice(all_fn_cp, ntest, replace=False))
+    for item in test:
+        all_fn_cp.remove(item)
+    train = list(np.random.choice(all_fn_cp, ntrain, replace=False))
+    for item in train:
+        all_fn_cp.remove(item)
+    assert len(all_fn_cp) == nvalid
+    valid = all_fn_cp
+
+    with open(test_im_file, "w") as test_im, open(test_msk_file, "w") as test_msk, \
+            open(train_im_file, "w") as train_im, open(train_msk_file, "w") as train_msk, \
+            open(valid_im_file, "w") as valid_im, open(valid_msk_file, "w") as valid_msk:
+        # Save files
+        for f in all_fn:
+            im_file = f
+            msk_file = f.replace(img_dir, mask_dir)
+
+            # Store to file depending on name
+            if im_file in test:
+                test_im.write(im_file+"\n")
+                test_msk.write(msk_file+"\n")
+            elif im_file in train:
+                train_im.write(im_file+"\n")
+                train_msk.write(msk_file+"\n")
+            else:  # it's in valid
+                valid_im.write(im_file+"\n")
+                valid_msk.write(msk_file+"\n")
+
+    return test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file
 
 
 def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
