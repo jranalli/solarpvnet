@@ -74,7 +74,7 @@ def reshape_and_save(img_list, out_dir, size=(576, 576)):
         im.save(os.path.join(out_dir, fn_short))
 
 
-def test_train_valid_split(img_dir, mask_dir, output_root, n_set=1000, test_train_valid=[0.2, 0.72, 0.08], seed=None,
+def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_train_valid=[0.2, 0.72, 0.08], seed=None,
                      img_ext="png", overwrite=False):
     """
     Generate the datasets based on
@@ -90,21 +90,21 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=1000, test_trai
         Root path to directory where files will be output. Directory names
         coming out will be: test_img_SEED, test_mask_SEED, train_img_SEED,
         train_mask_SEED
-    test_ratio: float (default 0.1)
-        Fraction of images that should be made the test data
+    n_set: int (default 1000)
+        Number of images in the total dataset. If None or 0, the whole list of images in the img_dir folder will be used.
+    test_train_valid: list[float] (default [0.2, 0.72, 0.08])
+        Fractions of test, train and valid sets relative to n_set.
     seed: int (default None)
-        Random seed for the random number generator. If None, no seed
-        will be used. Caution! This will affect the global
-        numpy.random.seed()!
-    overwrite: bool (default False)
-        Should files be overwritten in the target destinations?
+        The seed to use to initialize np.random.seed. If None, ignore.
     img_ext: str (default "png")
         The file extension of the images in the directory
+    overwrite: bool (default False)
+        Should files be overwritten in the target destinations?
 
     Returns
     ----------
-    Output directories organized as a tuple as follows:
-        (train_im_dir, train_msk_dir, test_im_dir, test_msk_dir)
+    Output files organized as a tuple as follows:
+        (test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file)
     """
     # Make sure our output directories exist
     verify_dir(output_root)
