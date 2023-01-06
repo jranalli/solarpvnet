@@ -156,13 +156,17 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
     assert len(all_fn_cp) == nvalid
     valid = all_fn_cp
 
+    img_extn = "." + img_ext
+    mask_files = files_of_type(mask_dir, os.path.splitext(os.path.basename(test[0]))[0]+"*")
+    mask_extn = os.path.splitext(os.path.basename(mask_files[0]))[-1]
+
     with open(test_im_file, "w") as test_im, open(test_msk_file, "w") as test_msk, \
             open(train_im_file, "w") as train_im, open(train_msk_file, "w") as train_msk, \
             open(valid_im_file, "w") as valid_im, open(valid_msk_file, "w") as valid_msk:
         # Save files
         for f in all_fn:
             im_file = f
-            msk_file = f.replace(img_dir, mask_dir)
+            msk_file = f.replace(img_dir, mask_dir).replace(img_extn, mask_extn)
 
             # Store to file depending on name
             if im_file in test:
