@@ -81,3 +81,14 @@ def files_of_type(search_dir, search_str, fullpath=True):
         return [f for f in glob.glob(os.path.join(search_dir, search_str))]
     else:
         return [os.path.basename(f) for f in glob.glob(os.path.join(search_dir, search_str))]
+
+
+def read_file_list(source_file, base_dir=None):
+    mylist = []
+    with open(source_file, 'r') as f:
+        for line in f.readlines():
+            fix = line.replace("\n", "")
+            if base_dir is not None:
+                fix = os.path.join(base_dir, fix)
+            mylist.append(fix)
+    return mylist
