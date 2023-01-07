@@ -1,4 +1,5 @@
 import os
+from split_image import split_image
 import utils
 from utils.fileio import files_of_type
 from model.dataset_manipulation import limit_dataset_size, reshape_and_save
@@ -49,19 +50,21 @@ for root, split_size in zip(roots, split_sizes):
                                                           "notpv": 0,
                                                           "pv": 255})
 
-    # print("== Slice Images ==")
-    # fns = files_of_type(img_dir, "*.png")
-    # for fn in fns:
-    #     utils.slice_image(fn, split_size, split_size, tile_dir)
-    #
-    # print("== Slice Masks ==")
-    # fns = files_of_type(mask_dir, "*.png")
-    # for fn in fns:
-    #     utils.slice_image(fn, split_size, split_size, mask_tile_dir)
+    print("== Slice Images ==")
+    fns = files_of_type(img_dir, "*.png")
+    n_row, n_col = utils.calc_rowcol(fns[0], split_size, split_size)
+    for fn in fns:
+        split_image(fn, n_row, n_col, output_dir=tile_dir,
+                    should_square=False, should_cleanup=False,
+                    should_quiet=True)
+
+    print("== Slice Masks ==")
+    fns = files_of_type(mask_dir, "*.png")
+    n_row, n_col = utils.calc_rowcol(fns[0], split_size, split_size)
+    for fn in fns:
+        split_image(fn, n_row, n_col, output_dir=mask_tile_dir,
+                    should_square=False, should_cleanup=False,
+                    should_quiet=True)
 
     print("== Delete Blanks ==")
     utils.delete_blank_tiles(tile_dir, mask_tile_dir, maxfrac=0, seed=None)
-
-    print("== Make Subsets ==")
-    limit_dataset_size(tile_dir, mask_tile_dir, subset_dir, n_limit=n_subset,
-                       seed=seed)

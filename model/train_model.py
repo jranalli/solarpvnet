@@ -17,6 +17,7 @@ import segmentation_models as sm
 
 
 from model.dataset_manipulation import reshape_inputs
+from utils.fileio import read_file_list
 
 
 def get_augmented(
@@ -75,32 +76,44 @@ def get_augmented(
 #   - Should we use Freeze_encoder? Batchnorm? Monte Carlo Dropout?
 
 
-def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
-               backbone="resnet34", seed=42, img_size=(576, 576), val_frac=0.1,
+def train_unet(train_img_dir, train_mask_dir,
+               train_img_file, train_mask_file, valid_img_file, valid_mask_file,
+               log_file, weight_file, end_weight_file=None, valid_img_dir=None, valid_mask_dir=None,
+               backbone="resnet34", seed=42, img_size=(576, 576),
                epochs=350, freeze_encoder=True, patience=0, batchnorm=False,
                overwrite=False):
     """
 
     Parameters
     ----------
-    img_dir: str
-        Directory with test images to predict
-    mask_dir: str
-        Directory with test masks
+    train_img_dir: str
+        Directory holding images in train_img_file. Use None for train_img_file that contains full paths.
+    train_mask_dir: str
+        Directory holding images in train_mask_file. Use None for train_mask_file that contains full paths.
+    valid_img_dir: str (default None)
+        Directory holding images in valid_img_file. Use None to copy from train_img_dir.
+    valid_mask_dir: str (default None)
+        Directory holding images in valid_mask_file. Use None to copy from train_mask_dir.
+    train_img_file: str
+        Full context of file containing list of train images
+    train_mask_file: str
+        Full context of file containing list of train mask images
+    valid_img_file: str
+        Full context of file containing list of validation images
+    valid_mask_file: str
+        Full context of file containing list of validation mask images
     log_file: str
         Full location of logging file
     weight_file: str
         Full location of file to save best weights
     end_weight_file: str
-        Full location of file to save final weights even if not best
-    backbone: str
+        Full location of file to save final weights even if not best. Set to None to ignore
+    backbone: str (default 'resnet34')
         Model backbone
-    seed: int
-        Random number generator seed
+    seed: int (default 42)
+        random number initialization value. Set to None to ignore
     img_size: tuple
         Image size in (xxx, yyy)
-    val_frac: float
-        Fraction of data to split for validation
     epochs: int
         Maximum number of epochs for training
     freeze_encoder: bool (default=True)
@@ -119,16 +132,21 @@ def train_unet(img_dir, mask_dir, log_file, weight_file, end_weight_file=None,
         print("Weights exist, skipping training...")
         return
 
+    if valid_img_dir is None:
+        valid_img_dir = train_img_dir
+    if valid_mask_dir is None:
+        valid_mask_dir = train_mask_dir
+
     # Get the list of all input/output files
-    images = glob.glob(os.path.join(img_dir, "*.png"))
-    masks = glob.glob(os.path.join(mask_dir, "*.png"))
+    train_imgs = read_file_list(train_img_file, train_img_dir)
+    train_masks = read_file_list(train_mask_file, train_mask_dir)
+    valid_imgs = read_file_list(valid_img_file, valid_img_dir)
+    valid_masks = read_file_list(valid_mask_file, valid_mask_dir)
 
     # Load and split the data
     print("==== Load and Split Data ====")
-    x, y = reshape_inputs(images, masks, img_size)
-    x_train, x_val, y_train, y_val = train_test_split(x, y, test_size=val_frac,
-                                                      random_state=seed)
-    del x, y  # Free up memory
+    x_train, y_train = reshape_inputs(train_imgs, train_masks, img_size)
+    x_val, y_val = reshape_inputs(valid_imgs, valid_masks, img_size)
 
     # assert y_val.shape == x_val.shape
     # assert y_train.shape == x_train.shape

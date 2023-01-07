@@ -60,7 +60,7 @@ def is_dir_empty(test_dir):
         return True
 
 
-def files_of_type(search_dir: object, search_str: object) -> object:
+def files_of_type(search_dir, search_str, fullpath=True):
     """
     Get all files in a directory that match a search string
 
@@ -70,9 +70,25 @@ def files_of_type(search_dir: object, search_str: object) -> object:
         full path of directory to scan
     search_str: str
         The search string to use. Examples: "*.json" or "*.png"
+    fullpath: bool (default True)
+        Whether or not return should contain the full path of files
 
     Returns
     -------
         List of all files in the dir matching the search string
     """
-    return [f for f in glob.glob(os.path.join(search_dir, search_str))]
+    if fullpath:
+        return [f for f in glob.glob(os.path.join(search_dir, search_str))]
+    else:
+        return [os.path.basename(f) for f in glob.glob(os.path.join(search_dir, search_str))]
+
+
+def read_file_list(source_file, base_dir=None):
+    mylist = []
+    with open(source_file, 'r') as f:
+        for line in f.readlines():
+            fix = line.replace("\n", "")
+            if base_dir is not None:
+                fix = os.path.join(base_dir, fix)
+            mylist.append(fix)
+    return mylist
