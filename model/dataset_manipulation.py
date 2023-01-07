@@ -74,10 +74,11 @@ def reshape_and_save(img_list, out_dir, size=(576, 576)):
         im.save(os.path.join(out_dir, fn_short))
 
 
-def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_train_valid=[0.2, 0.72, 0.08], seed=None,
-                     img_ext="png", overwrite=False):
+def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
+                           exclude=None, test_train_valid=(0.2, 0.72, 0.08),
+                           seed=None, img_ext="png", overwrite=False):
     """
-    Generate the datasets based on
+    Split out subsets of the
 
     Parameters
     ----------
@@ -90,8 +91,12 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
         Root path to directory where files will be output. Directory names
         coming out will be: test_img_SEED, test_mask_SEED, train_img_SEED,
         train_mask_SEED
+    exclude: iterable[str] (default None)
+        Exclude any filenames in the list. Routine will search for file
+        basenames that appear in any way within exclude. Ignore if None.
     n_set: int (default 1000)
-        Number of images in the total dataset. If None or 0, the whole list of images in the img_dir folder will be used.
+        Number of images in the total dataset. If None or 0, the whole list of
+        images in the img_dir folder will be used.
     test_train_valid: list[float] (default [0.2, 0.72, 0.08])
         Fractions of test, train and valid sets relative to n_set.
     seed: int (default None)
@@ -116,12 +121,16 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
     valid_msk_file = os.path.join(output_root, f"valid_mask_{seed}.txt")
 
     #
-    for i_file in [test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file]:
+    for i_file in [test_im_file, test_msk_file,
+                   train_im_file, train_msk_file,
+                   valid_im_file, valid_msk_file]:
         if os.path.exists(i_file):
             if not overwrite:
-                print(f"Output file {i_file} exists. Skipping entire operation.")
+                print(f"Output file {i_file} exists. Skipping operation.")
                 print(output_root)
-                return test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file
+                return test_im_file, test_msk_file, \
+                    train_im_file, train_msk_file, \
+                    valid_im_file, valid_msk_file
             else:  # Overwrite
                 os.remove(i_file)
 
@@ -131,16 +140,27 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
 
     # Get full set of image files
     all_fn = files_of_type(img_dir, "*." + img_ext, fullpath=False)
+
+    # If exclude provided, pop them out of all_fn
+    if exclude is not None:
+        for fn in all_fn.copy():
+            # this handles full context pathnames in both. If speed is an issue
+            # refactor to require basenames only in exclude
+            if any(os.path.basename(fn) in fstr for fstr in exclude):
+                all_fn.remove(fn)
+
+    # Get the subset if requested to do so
     if n_set is not None and n_set > 0:
         all_fn = list(np.random.choice(all_fn, n_set, replace=False))
     else:
         n_set = len(all_fn)
 
-    # Calculate how many belong in the test data
+    # Calculate how many belong in each split
     ntest = int(test_train_valid[0] * n_set)
     ntrain = int(test_train_valid[1] * n_set)
     nvalid = int(test_train_valid[2] * n_set)
 
+    # Coerce to match n_split
     if ntest + ntrain + nvalid != n_set:
         print("Set does not split evenly, biasing towards train.")
         ntrain = n_set - ntest - nvalid
@@ -150,19 +170,28 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
     test = list(np.random.choice(all_fn_cp, ntest, replace=False))
     for item in test:
         all_fn_cp.remove(item)
+    # Choose Train Files
     train = list(np.random.choice(all_fn_cp, ntrain, replace=False))
     for item in train:
         all_fn_cp.remove(item)
+    # Valid remains
     assert len(all_fn_cp) == nvalid
     valid = all_fn_cp
 
-    img_extn = "." + img_ext
-    mask_files = files_of_type(mask_dir, os.path.splitext(os.path.basename(test[0]))[0]+"*")
-    mask_extn = os.path.splitext(os.path.basename(mask_files[0]))[-1]
+    # Get file extensions for each images and masks
+    img_extn = "." + img_ext  # this was easy
+    # Find the filename of the first test image excluding extension
+    first_im = os.path.splitext(os.path.basename(test[0]))[0]
+    # Get the corresponding mask file
+    mask_files = files_of_type(mask_dir, first_im + "*")
+    mask_extn = os.path.splitext(mask_files[0])[-1]
 
-    with open(test_im_file, "w") as test_im, open(test_msk_file, "w") as test_msk, \
-            open(train_im_file, "w") as train_im, open(train_msk_file, "w") as train_msk, \
-            open(valid_im_file, "w") as valid_im, open(valid_msk_file, "w") as valid_msk:
+    with open(test_im_file, "w") as test_im, \
+            open(test_msk_file, "w") as test_msk, \
+            open(train_im_file, "w") as train_im, \
+            open(train_msk_file, "w") as train_msk, \
+            open(valid_im_file, "w") as valid_im, \
+            open(valid_msk_file, "w") as valid_msk:
         # Save files
         for f in all_fn:
             im_file = f
@@ -179,7 +208,9 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None, test_trai
                 valid_im.write(im_file+"\n")
                 valid_msk.write(msk_file+"\n")
 
-    return test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file
+    return test_im_file, test_msk_file, \
+        train_im_file, train_msk_file, \
+        valid_im_file, valid_msk_file
 
 
 def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,

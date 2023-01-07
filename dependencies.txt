@@ -1,5 +1,5 @@
 pillow
-split-image==1.4.0
+split-image==2.0.1
 
 https://www.tensorflow.org/install/pip#windows-native_1
 conda install -c conda-forge cudatoolkit=11.2 cudnn=8.1.0
