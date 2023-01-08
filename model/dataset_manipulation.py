@@ -344,6 +344,7 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
         with open(fn, 'r') as f:
             data = f.read()
             mylist = data.split("\n")
+            mylist.remove("")  # sometimes we get a blank line
             all_lists.append(mylist)
 
     if weights is None:

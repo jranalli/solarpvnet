@@ -24,7 +24,7 @@ drive = "f:"
 
 splits = [my_test_ratio, my_train_ratio, 1-my_test_ratio-my_train_ratio]
 
-pathroot = os.path.join(drive, 'solardnn2')
+pathroot = os.path.join(drive, 'solardnn')
 
 sites = ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC", "combo_dataset"]  # "Cal_Oxnard" "NYC"- too few files
 sites = ["NYC"]
@@ -33,8 +33,13 @@ for site in sites:
     resultroot = os.path.join(runroot, "results")
 
     dataroot = os.path.join(runroot, "tiles")
-    img_root = os.path.join(dataroot, f"img")
-    mask_root = os.path.join(dataroot, f"mask")
+    if "combo" in site:
+        img_root = None
+        mask_root = None
+    else:
+        img_root = os.path.join(dataroot, f"img")
+        mask_root = os.path.join(dataroot, f"mask")
+
 
     for myseed in myseeds:
         for mybackbone in mybackbones:
