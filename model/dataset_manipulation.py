@@ -302,12 +302,95 @@ def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
         shutil.copy(im_file, im_file.replace(img_dir, out_img_dir))
         shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk_dir))
 
-def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000, seed=None):
 
+def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None, total_imgs=1000, seed=None):
+    """
+    Make a combination dataset from other datasets by choosing a random sample.
+    Builds a new text file. To work on both images and masks, this function
+    could be run separately with the same seed on both the img and mask file
+    lists.
+
+    Parameters
+    ----------
+    input_files: list[str]
+        A list of dataset root directories to build from
+    out_file: str
+        Full context of output file
+    root_paths: list[str] or None
+        List of root paths corresponding to each input file. These will be
+        appended to each filename in the file. If None, nothing will be added.
+    weights: iterable
+        Scalable weights for each dataset to split by. Defaults to equal.
+        Will be normalized to percentages.
+    total_imgs: int
+        size of dataset. Set to None to retain all images
+    seed: int
+        seed for random number generator
+    """
     # Set seed
     if seed is not None:
         np.random.seed(seed)
 
+    verify_dir(os.path.dirname(out_file))
+
+    # Initialize root_paths if it doesn't exist
+    if root_paths is None:
+        root_paths = []
+        for f in input_files:
+            root_paths.append("")
+
+    all_lists = []
+    for fn in input_files:
+        with open(fn, 'r') as f:
+            data = f.read()
+            mylist = data.split("\n")
+            all_lists.append(mylist)
+
+    if weights is None:
+        weights = np.ones_like(input_files, dtype=np.float32)/len(input_files)
+
+    im_each = np.floor(np.array(weights)/sum(weights) * total_imgs).astype("int")
+    # Correct for rounding
+    im_each[-1] = total_imgs - sum(im_each[:-1])
+
+    with open(out_file, "w") as outf:
+        for all_fn, num, root in zip(all_lists, im_each, root_paths):
+            if total_imgs is None:
+                subset = all_fn
+            else:
+                subset = list(np.random.choice(all_fn, num, replace=False))
+
+            for fn in subset:
+                outf.write(os.path.join(root, fn)+"\n")
+
+
+def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000, seed=None):
+    """
+    Make a combination dataset from other datasets by choosing a random sample.
+    Copies images from previous to new location.
+
+    Parameters
+    ----------
+    data_paths: list
+        A list of dataset root directories to build from
+    out_path:
+    img_subpath: str
+        A subpath under data_path where images live
+    mask_subpath: str
+        A subpath under data_path where masks live
+    img_ext: str
+        The file extension for images
+    weights: iterable
+        Scalable weights for each dataset to split by. Defaults to equal.
+        Will be normalized to percentages.
+    total_imgs: int
+        size of dataset. Set to None to retain all images
+    seed: int
+        seed for random number generator
+    """
+    # Set seed
+    if seed is not None:
+        np.random.seed(seed)
 
     img_path_out = os.path.join(out_path, img_subpath)
     mask_path_out = os.path.join(out_path, mask_subpath)
@@ -317,7 +400,7 @@ def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="ma
     if not weights:
         weights = np.ones_like(data_paths, dtype=np.float32)/len(data_paths)
 
-    im_each = np.floor(weights * total_imgs).astype("int")
+    im_each = np.floor(weights/sum(weights) * total_imgs).astype("int")
     # Correct for rounding
     im_each[-1] = total_imgs - sum(im_each[:-1])
 
@@ -325,13 +408,17 @@ def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="ma
         img_path = os.path.join(path, img_subpath)
         mask_path = os.path.join(path, mask_subpath)
         all_fn = files_of_type(img_path, "*." + img_ext)
-        subset = list(np.random.choice(all_fn, num, replace=False))
+        if total_imgs is None:
+            subset = all_fn
+        else:
+            subset = list(np.random.choice(all_fn, num, replace=False))
 
         for fn in subset:
             im_file = fn
             msk_file = fn.replace(img_subpath, mask_subpath)
             shutil.copy(im_file, im_file.replace(path, out_path))
             shutil.copy(msk_file, msk_file.replace(path, out_path))
+
 
 if __name__ == "__main__":
     paths = [r"F:\solardnn\Cal_Fresno\tile_subsets\set0_seed42",

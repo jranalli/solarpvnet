@@ -15,11 +15,14 @@ subset = 0
 subset_seed = 42
 epochs = 200
 
+
 patience = 10
 norm = True
 freeze = True
 
 drive = "f:"
+
+splits = [my_test_ratio, my_train_ratio, 1-my_test_ratio-my_train_ratio]
 
 pathroot = os.path.join(drive, 'solardnn2')
 
@@ -44,8 +47,9 @@ for site in sites:
                 print(f"Skipping {site}-{mybackbone}-{myseed}")
                 continue
 
-            test_im, test_mask, train_im, train_mask, valid_im, valid_mask = test_train_valid_split(img_root, mask_root, dataroot,
-                                test_train_valid=[my_test_ratio, my_train_ratio, 1-my_test_ratio-my_train_ratio], seed=myseed, n_set=n_set)
+            test_im, test_mask, train_im, train_mask, valid_im, valid_mask = \
+                test_train_valid_split(img_root, mask_root, dataroot,
+                                test_train_valid=splits, seed=myseed, n_set=n_set)
             train_unet(img_root, mask_root, train_im, train_mask, valid_im, valid_mask, log_file=mylogfile, weight_file=myweightfile,
                        end_weight_file=myfinalweightfile, backbone=mybackbone, seed=myseed, img_size=(mysize, mysize),
                        epochs=epochs, freeze_encoder=freeze, batchnorm=norm,
