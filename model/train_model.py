@@ -17,7 +17,36 @@ import segmentation_models as sm
 
 
 from model.dataset_manipulation import reshape_inputs
-from utils.fileio import read_file_list
+from utils.fileio import read_file_list, verify_dir
+
+
+def write_header(csvfile, train_img_dir, train_mask_dir,
+               train_img_file, train_mask_file, valid_img_file, valid_mask_file,
+               best_weight_file, end_weight_file, valid_img_dir, valid_mask_dir,
+               backbone, seed, img_size,
+               epochs, freeze_encoder, patience, batchnorm, augment_dict):
+
+    verify_dir(os.path.dirname(csvfile))
+
+    with open(csvfile, "w") as f:
+        for name in ['train_img_dir', 'train_mask_dir', 'train_img_file', 'train_mask_file', 'valid_img_file', 'valid_mask_file',
+               'best_weight_file', 'end_weight_file', 'valid_img_dir', 'valid_mask_dir', 'backbone', 'seed', 'img_size', 'epochs', 'freeze_encoder', 'patience', 'batchnorm']:
+            f.write(name+",")
+        f.write("\n")
+        for val in [train_img_dir, train_mask_dir,
+               train_img_file, train_mask_file, valid_img_file, valid_mask_file,
+               best_weight_file, end_weight_file, valid_img_dir, valid_mask_dir,
+               backbone, seed, img_size,
+               epochs, freeze_encoder, patience, batchnorm]:
+            f.write(str(val).replace(",", ";") + ",")
+        f.write("\n")
+        for key in augment_dict.keys():
+            f.write(key + ",")
+        f.write("\n")
+        for key in augment_dict.keys():
+            f.write(str(augment_dict[key]).replace(",", ";") + ",")
+        f.write("\n\n")
+        f.write("epoch,train_loss,train_IOU,val_loss,val_IOU\n")
 
 
 def get_augmented(
@@ -78,7 +107,7 @@ def get_augmented(
 
 def train_unet(train_img_dir, train_mask_dir,
                train_img_file, train_mask_file, valid_img_file, valid_mask_file,
-               log_file, weight_file, end_weight_file=None, valid_img_dir=None, valid_mask_dir=None,
+               log_file, best_weight_file, end_weight_file=None, valid_img_dir=None, valid_mask_dir=None,
                backbone="resnet34", seed=42, img_size=(576, 576),
                epochs=350, freeze_encoder=True, patience=0, batchnorm=False,
                overwrite=False):
@@ -104,7 +133,7 @@ def train_unet(train_img_dir, train_mask_dir,
         Full context of file containing list of validation mask images
     log_file: str
         Full location of logging file
-    weight_file: str
+    best_weight_file: str
         Full location of file to save best weights
     end_weight_file: str
         Full location of file to save final weights even if not best. Set to None to ignore
@@ -121,16 +150,20 @@ def train_unet(train_img_dir, train_mask_dir,
     patience: int (default 0)
         Patience for early stopping. If set to 0, the strict number of epochs
         will be used. If greater than zero, will stop early after N epochs
-        without improvement in the validation loss.
+        without improvement in the loss.
     batchnorm: bool (default=False)
         Use batch norm?
     overwrite: bool (default=False)
         Overwrite existing data?
     """
 
-    if os.path.exists(weight_file) and not overwrite:
+    if os.path.exists(best_weight_file) and not overwrite:
         print("Weights exist, skipping training...")
         return
+    else:
+        verify_dir(os.path.dirname(best_weight_file))
+        if end_weight_file is not None:
+            verify_dir(os.path.dirname(best_weight_file))
 
     if valid_img_dir is None:
         valid_img_dir = train_img_dir
@@ -167,12 +200,7 @@ def train_unet(train_img_dir, train_mask_dir,
     # For more fixes see:
     #   https://github.com/keras-team/keras/issues/1627
     #   https://stackoverflow.com/questions/46705600/keras-fit-image-augmentations-to-training-data-using-flow-from-directory
-    train_gen = get_augmented(
-        x_train,
-        y_train,
-        seed=seed,
-        batch_size=4,  # 2
-        data_gen_args=dict(
+    augment_dict = dict(
             rotation_range=30.,
             width_shift_range=0.1,
             height_shift_range=0.1,
@@ -182,17 +210,25 @@ def train_unet(train_img_dir, train_mask_dir,
             # vertical_flip=True,
             # fill_mode='constant'
         )
+    train_gen = get_augmented(
+        x_train,
+        y_train,
+        seed=seed,
+        batch_size=4,  # 2
+        data_gen_args=augment_dict
     )
 
     # Setup outputs
     print("==== Setup Callbacks ====")
-    model_filename = weight_file
+    model_filename = best_weight_file
     checkpoint_callback = ModelCheckpoint(
         model_filename,
         verbose=1,
         monitor='val_loss',
         save_best_only=True,
     )
+    write_header(log_file, train_img_dir, train_mask_dir, train_img_file, train_mask_file, valid_img_file, valid_mask_file,
+                 best_weight_file, end_weight_file, valid_img_dir, valid_mask_dir, backbone, seed, img_size, epochs, freeze_encoder, patience, batchnorm, augment_dict)
     csv_logger_callback = CSVLogger(log_file, append=True, separator=',')
 
     callbacks = [checkpoint_callback, csv_logger_callback]
@@ -233,13 +269,5 @@ def train_unet(train_img_dir, train_mask_dir,
 
 
 if __name__ == '__main__':
-    mysize = 576
-    myseed = 42
-    mybackbone = "resnet34"
-    myinputpath = f"c:\\nycdata\\sample_subset\\tiles\\train_img_{myseed}"
-    mymaskpath = f"c:\\nycdata\\sample_subset\\tiles\\train_mask_{myseed}"
-    myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
-    myfinalweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_final.h5"
-    mylogfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_trainlog.csv"
-
-    train_unet(myinputpath, mymaskpath, mylogfile, myweightfile, myfinalweightfile, mybackbone, myseed, (mysize,mysize))
+    pass
+    # Gebusted, come up with new demo

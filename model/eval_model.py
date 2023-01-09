@@ -23,7 +23,7 @@ from utils.fileio import read_file_list
 
 
 def eval_model(test_img_dir, test_mask_dir, test_img_file, test_mask_file, weight_file, result_file, pred_dir,
-               plot_dir, backbone="resnet34", img_size=(576, 576), batchnorm=False):
+               plot_dir=None, backbone="resnet34", img_size=(576, 576), batchnorm=False):
     """
 
     Parameters

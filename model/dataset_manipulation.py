@@ -186,6 +186,8 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
     mask_files = files_of_type(mask_dir, first_im + "*")
     mask_extn = os.path.splitext(mask_files[0])[-1]
 
+
+    all_fn.sort()
     with open(test_im_file, "w") as test_im, \
             open(test_msk_file, "w") as test_msk, \
             open(train_im_file, "w") as train_im, \
@@ -303,7 +305,7 @@ def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
         shutil.copy(msk_file, msk_file.replace(mask_dir, out_msk_dir))
 
 
-def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None, total_imgs=1000, seed=None):
+def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None, total_imgs=1000, seed=None, overwrite=False):
     """
     Make a combination dataset from other datasets by choosing a random sample.
     Builds a new text file. To work on both images and masks, this function
@@ -326,12 +328,16 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
         size of dataset. Set to None to retain all images
     seed: int
         seed for random number generator
+    overwrite: bool (default False)
+        Should files be overwritten in the target destinations?
     """
     # Set seed
     if seed is not None:
         np.random.seed(seed)
 
     verify_dir(os.path.dirname(out_file))
+    if os.path.exists(out_file) and not overwrite:
+        print(f"Output file {out_file} exists. Skipping operation.")
 
     # Initialize root_paths if it doesn't exist
     if root_paths is None:
@@ -354,6 +360,7 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
     # Correct for rounding
     im_each[-1] = total_imgs - sum(im_each[:-1])
 
+    endl = "\n"
     with open(out_file, "w") as outf:
         for all_fn, num, root in zip(all_lists, im_each, root_paths):
             if total_imgs is None:
@@ -362,7 +369,8 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
                 subset = list(np.random.choice(all_fn, num, replace=False))
 
             for fn in subset:
-                outf.write(os.path.join(root, fn)+"\n")
+                outf.write(os.path.join(root, fn)+endl)
+
 
 
 def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000, seed=None):
