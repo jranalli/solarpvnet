@@ -1,4 +1,4 @@
-from model.dataset_manipulation import test_train_valid_split
+from model.dataset_manipulation import test_train_valid_split, make_combo_dataset_txt
 from model.train_model import train_unet
 from model.eval_model import eval_model
 import os
@@ -52,8 +52,11 @@ for site in sites:
                 print(f"Skipping {site}-{mybackbone}-{myseed}")
                 continue
 
-            test_im, test_mask, train_im, train_mask, valid_im, valid_mask = \
-                test_train_valid_split(img_root, mask_root, dataroot,
+            if "combo" in site:
+                make_combo_dataset_txt()
+            else:
+                test_im, test_mask, train_im, train_mask, valid_im, valid_mask = \
+                    test_train_valid_split(img_root, mask_root, dataroot,
                                 test_train_valid=splits, seed=myseed, n_set=n_set)
             train_unet(img_root, mask_root, train_im, train_mask, valid_im, valid_mask, log_file=mylogfile, weight_file=myweightfile,
                        end_weight_file=myfinalweightfile, backbone=mybackbone, seed=myseed, img_size=(mysize, mysize),
