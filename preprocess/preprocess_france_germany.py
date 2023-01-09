@@ -15,9 +15,3 @@ for root in roots:
 
     tile_dir = os.path.join(root, "tiles\\img")
     mask_tile_dir = os.path.join(root, "tiles\\mask")
-
-    subset_dir = os.path.join(root, "tile_subsets")
-
-    print("== Make Subsets ==")
-    limit_dataset_size(tile_dir, mask_tile_dir, subset_dir, n_limit=n_subset,
-                       seed=seed)

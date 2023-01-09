@@ -1,11 +1,13 @@
 import os
 
+from split_image import split_image
+
 import utils
 from utils.fileio import files_of_type
 
-from model.dataset_manipulation import limit_dataset_size
+from model.dataset_manipulation import test_train_valid_split
 
-drive = "D:\\"
+drive = "f:\\"
 split_size = 625
 n_subset = 1000
 seed = 42
@@ -41,19 +43,19 @@ for fn in fns:
 
 print("== Slice Images ==")
 fns = files_of_type(img_dir, "*.png")
+n_row, n_col = utils.calc_rowcol(fns[0], split_size, split_size)
 for fn in fns:
-    utils.slice_image(fn, split_size, split_size, tile_dir)
+    split_image(fn, n_row, n_col, output_dir=tile_dir,
+                should_square=False, should_cleanup=False, should_quiet=True)
 
 
 print("== Slice Masks ==")
 fns = files_of_type(mask_dir, "*.png")
+n_row, n_col = utils.calc_rowcol(fns[0], split_size, split_size)
 for fn in fns:
-    utils.slice_image(fn, split_size, split_size, mask_tile_dir)
+    split_image(fn, n_row, n_col, output_dir=mask_tile_dir,
+                should_square=False, should_cleanup=False, should_quiet=True)
 
 
 print("== Delete Blanks ==")
 utils.delete_blank_tiles(tile_dir, mask_tile_dir, maxfrac=0, seed=None)
-
-print("== Make Subsets ==")
-limit_dataset_size(tile_dir, mask_tile_dir, subset_dir, n_limit=n_subset,
-                   seed=seed)

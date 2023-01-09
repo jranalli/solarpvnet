@@ -19,17 +19,23 @@ from keras.optimizers import Adam, SGD
 
 import segmentation_models as sm
 
+from utils.fileio import read_file_list
 
-def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
+
+def eval_model(test_img_dir, test_mask_dir, test_img_file, test_mask_file, weight_file, result_file, pred_dir,
                plot_dir, backbone="resnet34", img_size=(576, 576), batchnorm=False):
     """
 
     Parameters
     ----------
-    img_dir: str
-        Directory with test images to predict
-    mask_dir: str
-        Directory with test masks
+    test_img_dir: str
+        Directory with test images to predict. Use None for test_img_file that contains full paths.
+    test_mask_dir: str
+        Directory with test masks. Use None for test_img_file that contains full paths.
+    test_img_file: str
+        Full context of file containing list of train images
+    test_mask_file: str
+        Full context of file containing list of train mask images
     weight_file: str
         Full location of saved weights
     result_file: str
@@ -61,8 +67,8 @@ def eval_model(img_dir, mask_dir, weight_file, result_file, pred_dir,
             os.makedirs(plot_dir)
 
     # Get the list of all input/output files
-    images = glob.glob(os.path.join(img_dir, "*.png"))
-    masks = glob.glob(os.path.join(mask_dir, "*.png"))
+    images = read_file_list(test_img_file, test_img_dir)
+    masks = read_file_list(test_mask_file, test_mask_dir)
 
     # Load and reshape the data
     print("==== Load and Resize Data ====")
