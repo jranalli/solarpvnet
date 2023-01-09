@@ -217,11 +217,11 @@ def demo_manual():
 if __name__ == "__main__":
     model_names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"]
 
-    result_root = r"C:\Users\jar339\The Pennsylvania State University\DLR & PSU Variability Collaboration - General\PV Detection\result_predictions"
+    result_root = r"d:\data\solardnn\results"
 
     for site in ["Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "Germany", "NYC"]:
-        img_path = fr"C:\Users\jar339\The Pennsylvania State University\DLR & PSU Variability Collaboration - General\PV Detection\tiles\{site}\test_img_42"
-        truth_path = fr"C:\Users\jar339\The Pennsylvania State University\DLR & PSU Variability Collaboration - General\PV Detection\tiles\{site}\test_mask_42"
+        img_path = fr"d:\data\solardnn\{site}\tile_subsets\set0_seed42\test_img_42"
+        truth_path = fr"d:\data\solardnn\{site}\tile_subsets\set0_seed42\test_mask_42"
         pred_dirs = [os.path.join(result_root, f"results_set0_{site}_predbyCal_Fresno_resnet34_42\pred"),
                      os.path.join(result_root, f"results_set0_{site}_predbyCal_Stockton_resnet34_42\pred"),
                      os.path.join(result_root, f"results_set0_{site}_predbyFrance_ign_resnet34_42\pred"),
@@ -230,12 +230,12 @@ if __name__ == "__main__":
                      os.path.join(result_root, f"results_set0_{site}_predbyNYC_resnet34_42\pred"),
                      os.path.join(result_root, f"results_set0_{site}_predbycombo_dataset_resnet34_42\pred")
                      ]
-        outdir = fr"C:\Users\jar339\The Pennsylvania State University\DLR & PSU Variability Collaboration - General\PV Detection\border_plots\{site}"
+        outdir = fr"d:\data\solardnn\results\border_plots\{site}"
 
         print(f"\n=={site} BORDER==")
         model_boundary_plot(img_path, truth_path, pred_dirs, outdir, model_names=model_names)
 
-        outdir = fr"C:\Users\jar339\The Pennsylvania State University\DLR & PSU Variability Collaboration - General\PV Detection\combo_plots\{site}"
+        outdir = fr"d:\data\solardnn\results\combo_plots\{site}"
 
         print(f"\n=={site} COMBO==")
         multimodel_plot(img_path, truth_path, pred_dirs, outdir, model_names=model_names)

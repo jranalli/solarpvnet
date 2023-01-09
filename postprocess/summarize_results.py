@@ -9,7 +9,7 @@ subset_seed = 42
 
 weights = 'best'
 
-drive = "d:"
+drive = r"d:\data"
 pathroot = os.path.join(drive, 'solardnn')
 
 sites = ["Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "Germany", "NYC"]  # "Cal_Oxnard"- too few files

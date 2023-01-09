@@ -23,6 +23,11 @@ def process_directory(mydir):
 
 
 if __name__=="__main__":
-    path = r"F:\solardnn\Germany\tile_subsets\set0_seed42\train_mask_42"
+    path = r"D:\data\solardnn\Germany\tile_subsets\set0_seed42\train_mask_42"
+    process_directory(path)
 
+    path = r"D:\data\solardnn\Germany\tile_subsets\set0_seed42\test_mask_42"
+    process_directory(path)
+
+    path=r"D:\data\solardnn\combo_dataset\tile_subsets\set0_seed42\train_mask_42"
     process_directory(path)
