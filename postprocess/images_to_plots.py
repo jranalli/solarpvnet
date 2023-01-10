@@ -12,7 +12,8 @@ import importlib.util
 
 
 def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], colors=["#0000ff", "#000088", "#00ff00", "#008800", "#ff00ff", "#ff8800", "#aaaa00"]):
-    img_paths = glob.glob(os.path.join(im_dir, "*.png"))
+    # Get the filenames from one of the predictions
+    img_paths = glob.glob(os.path.join(pred_dirs[0], "*.png"))
     imgs = [os.path.basename(img_path) for img_path in img_paths]
     titles = ['img', 'truth', 'predictions']
 
@@ -87,7 +88,8 @@ def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True
     fg_alpha = 0.5
     overlay_color = "#ff0000"
 
-    img_paths = glob.glob(os.path.join(im_src, "*.png"))
+    # Get the filenames from one of the predictions
+    img_paths = glob.glob(os.path.join(pred_dirs[0], "*.png"))
     imgs = [os.path.basename(img_path) for img_path in img_paths]
 
     titles = ['img', 'truth']
@@ -215,27 +217,43 @@ def demo_manual():
 
 
 if __name__ == "__main__":
-    model_names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"]
+    # model_names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "CMB-6", "CMB-5A"]
+    model_names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "CMB-6"]
+    test_sites = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q"]
+    data_root = r"d:\data\solardnn"
 
-    result_root = r"d:\data\solardnn\results"
+    backbone = "resnet34"
+    seed = 42
+    model_ver = 1
 
-    for site in ["Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "Germany", "NYC"]:
-        img_path = fr"d:\data\solardnn\{site}\tile_subsets\set0_seed42\test_img_42"
-        truth_path = fr"d:\data\solardnn\{site}\tile_subsets\set0_seed42\test_mask_42"
-        pred_dirs = [os.path.join(result_root, f"results_set0_{site}_predbyCal_Fresno_resnet34_42\pred"),
-                     os.path.join(result_root, f"results_set0_{site}_predbyCal_Stockton_resnet34_42\pred"),
-                     os.path.join(result_root, f"results_set0_{site}_predbyFrance_ign_resnet34_42\pred"),
-                     os.path.join(result_root, f"results_set0_{site}_predbyFrance_google_resnet34_42\pred"),
-                     os.path.join(result_root, f"results_set0_{site}_predbyGermany_resnet34_42\pred"),
-                     os.path.join(result_root, f"results_set0_{site}_predbyNYC_resnet34_42\pred"),
-                     os.path.join(result_root, f"results_set0_{site}_predbycombo_dataset_resnet34_42\pred")
-                     ]
-        outdir = fr"d:\data\solardnn\results\border_plots\{site}"
+    boundary_plots = False
+    multi_plots = True
 
-        print(f"\n=={site} BORDER==")
-        model_boundary_plot(img_path, truth_path, pred_dirs, outdir, model_names=model_names)
 
-        outdir = fr"d:\data\solardnn\results\combo_plots\{site}"
+    for test_site in test_sites:
+        test_img_path = fr"d:\data\solardnn\{test_site}\tiles\img"
+        test_mask_path = fr"d:\data\solardnn\{test_site}\tiles\mask"
 
-        print(f"\n=={site} COMBO==")
-        multimodel_plot(img_path, truth_path, pred_dirs, outdir, model_names=model_names)
+        pred_dirs = []
+        for model in model_names:
+            pred_dirs.append(os.path.join(data_root, fr"{model}\predictions\{model}_{backbone}_{seed}_v{model_ver}_predicting_{test_site}\pred_masks"))
+        # pred_dirs = [os.path.join(data_root, fr"CA-F\CA-F_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              os.path.join(data_root, fr"CA-S\CA-S_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              os.path.join(data_root, fr"FR-I\FR-I_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              os.path.join(data_root, fr"FR-G\FR-G_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              os.path.join(data_root, fr"DE-G\DE-G_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              os.path.join(data_root, fr"NY-Q\NY-Q_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              os.path.join(data_root, fr"CMB-6\CMB-6_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
+        #              ]
+
+        if boundary_plots:
+            outdir = os.path.join(data_root, fr"results\{backbone}_{seed}_{model_ver}\test_{test_site}\boundary")
+
+            print(f"\n=={test_site} BORDER==")
+            model_boundary_plot(test_img_path, test_mask_path, pred_dirs, outdir, model_names=model_names)
+
+        if multi_plots:
+            outdir = os.path.join(data_root, fr"results\{backbone}_{seed}_{model_ver}\test_{test_site}\multi")
+
+            print(f"\n=={test_site} COMBO==")
+            multimodel_plot(test_img_path, test_mask_path, pred_dirs, outdir, model_names=model_names)

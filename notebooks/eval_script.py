@@ -67,43 +67,43 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
     Nested dicts of paths[train_set][seed][backbone][model_rev][test_set] with things at various levels
         [train_set]
             Stores directory paths germane to the different training datasets
-            - tiles: the root tile directory for the dataset.  e.g. d:\solardnn\NY-Q\tiles
-            - img_root: the root image directory for dataset. e.g. d:\solardnn\NY-Q\tiles\img
-            - mask_root: the root mask directory for dataset. e.g. d:\solardnn\NY-Q\tiles\mask
-            - model_out_root: directory where models should be saved. e.g. d:\solardnn\NY-Q\models
-            - prediction_root: directory for predictions when the model is tested. e.g. d:\solardnn\NY-Q\predictions
+            - tiles: the root tile directory for the dataset.  e.g. d:/solardnn/NY-Q/tiles
+            - img_root: the root image directory for dataset. e.g. d:/solardnn/NY-Q/tiles/img
+            - mask_root: the root mask directory for dataset. e.g. d:/solardnn/NY-Q/tiles/mask
+            - model_out_root: directory where models should be saved. e.g. d:/solardnn/NY-Q/models
+            - prediction_root: directory for predictions when the model is tested. e.g. d:/solardnn/NY-Q/predictions
         [seed]
             Stores the various dataset definition files. These will be located in the tiles directory for the training set.
-            - test_im: Location of dataset definition file for test images. e.g. d:\solardnn\NY-Q\tiles\test_im_42.txt
-            - test_mask: Location of dataset definition file for test masks. e.g. d:\solardnn\NY-Q\tiles\test_mask_42.txt
-            - train_im: Location of dataset definition file for train images. e.g. d:\solardnn\NY-Q\tiles\train_im_42.txt
-            - train_mask: Location of dataset definition file for train masks. e.g. d:\solardnn\NY-Q\tiles\train_mask_42.txt
-            - valid_im: Location of dataset definition file for valid images. e.g. d:\solardnn\NY-Q\tiles\valid_im_42.txt
-            - valid_mask: Location of dataset definition file for valid masks. e.g. d:\solardnn\NY-Q\tiles\valid_mask_42.txt
+            - test_im: Location of dataset definition file for test images. e.g. d:/solardnn/NY-Q/tiles/test_im_42.txt
+            - test_mask: Location of dataset definition file for test masks. e.g. d:/solardnn/NY-Q/tiles/test_mask_42.txt
+            - train_im: Location of dataset definition file for train images. e.g. d:/solardnn/NY-Q/tiles/train_im_42.txt
+            - train_mask: Location of dataset definition file for train masks. e.g. d:/solardnn/NY-Q/tiles/train_mask_42.txt
+            - valid_im: Location of dataset definition file for valid images. e.g. d:/solardnn/NY-Q/tiles/valid_im_42.txt
+            - valid_mask: Location of dataset definition file for valid masks. e.g. d:/solardnn/NY-Q/tiles/valid_mask_42.txt
         backbone:
             Holder for next level
         revision:
             Stores the info about the trained model. All model outputs are stored together in the models directory for
             the training set. The model filenames differentiate them.
-            - best_weights: Location of best weights file. e.g. d:\solardnn\NY-Q\models\NY-Q_resnet34_42_v1_weights_best.h5
-            - final_weights: Location of final weights file. e.g. d:\solardnn\NY-Q\models\NY-Q_resnet34_42_v1_weights_final.h5
-            - train_log: Location of log file from training. e.g. d:\solardnn\NY-Q\models\NY-Q_resnet34_42_v1_trainlog.csv
+            - best_weights: Location of best weights file. e.g. d:/solardnn/NY-Q/models/NY-Q_resnet34_42_v1_weights_best.h5
+            - final_weights: Location of final weights file. e.g. d:/solardnn/NY-Q/models/NY-Q_resnet34_42_v1_weights_final.h5
+            - train_log: Location of log file from training. e.g. d:/solardnn/NY-Q/models/NY-Q_resnet34_42_v1_trainlog.csv
         test_set:
             Stores info about the outputs when we test a model. Stored nested below the predictions root dir for the
-            training set. The subdir name will always be \{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}\
+            training set. The subdir name will always be /{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}/
             - prediction_dir: The location of the prediction masks dir for the test set.
-                e.g. d:\solardnn\NY-Q\predictions\NY-Q_resnet34_42_v1_predicting_CA-F\pred_masks
+                e.g. d:/solardnn/NY-Q/predictions/NY-Q_resnet34_42_v1_predicting_CA-F/pred_masks
             - plot dir: The location of plot files if they're generated.
-                e.g. d:\solardnn\NY-Q\predictions\NY-Q_resnet34_42_v1_predicting_CA-F\plots
+                e.g. d:/solardnn/NY-Q/predictions/NY-Q_resnet34_42_v1_predicting_CA-F/plots
             - result file: The location of the datafile for the prediction summary
-                e.g. d:\solardnn\NY-Q\predictions\NY-Q_resnet34_42_v1_predicting_CA-F\NY-Q_resnet34_42_v1_predicting_CA-F_data.csv
+                e.g. d:/solardnn/NY-Q/predictions/NY-Q_resnet34_42_v1_predicting_CA-F/NY-Q_resnet34_42_v1_predicting_CA-F_data.csv
 
 
     Parameters
     ----------
     data_root_dir: str
         Root directory for all the data. Sites should be subdirs here and must contain subdirectories of tiles, images and masks.
-        e.g. d:\data\solardnn\{SITE}\tiles\img   and   d:\data\solardnn\{SITE}\tiles\mask
+        e.g. d:/data/solardnn/{SITE}/tiles/img   and   d:/data/solardnn/{SITE}/tiles/mask
     train_sets: list[str]
         List of strings representing all the training sets to consider. e.g. ['CA-F','NY-Q','CMB-6']
     seeds: list[int]
@@ -284,6 +284,7 @@ def train_models(paths, train_sets, seeds, backbones, model_revs, img_size, epoc
         for seed in seeds:
             for backbone in backbones:
                 for model_rev in model_revs:
+                    print("============")
                     print(f"Training: \nSet: {train_set}\nSeed: {seed}\nBackbone: {backbone}\nRev: v{model_rev}\n")
 
                     imdir = paths[train_set]['img_root']
@@ -338,12 +339,14 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
             for backbone in backbones:
                 for model_rev in model_revs:
                     for test_set in test_sets:
+                        print("============")
+                        print(f"Testing: \nModel: {train_set}\nSeed: {seed}\nBackbone: {backbone}\nRev: v{model_rev}\nTest Set: {test_set}\n")
 
-                        tst_im_f = paths[train_set][seed]['test_im']
-                        tst_m_f = paths[train_set][seed]['test_mask']
+                        tst_im_f = paths[test_set][seed]['test_im']
+                        tst_m_f = paths[test_set][seed]['test_mask']
 
-                        imdir = paths[train_set]['img_root']
-                        maskdir = paths[train_set]['mask_root']
+                        imdir = paths[test_set]['img_root']
+                        maskdir = paths[test_set]['mask_root']
 
                         if weight_type == 'best':
                             wgt_file = paths[train_set][seed][backbone][model_rev]['best_weights']

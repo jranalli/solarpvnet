@@ -23,16 +23,5 @@ def process_directory(mydir):
 
 
 if __name__=="__main__":
-    for site in ["Germany", "Cal_Fresno", "Cal_Stockton", "France_ign", "France_google", "NYC", "combo_dataset"]:
-        path = rf"F:\solardnn\{site}\tile_subsets\set0_seed42\train_mask_42"
-        process_directory(path)
-
-        path = rf"F:\solardnn\{site}\tile_subsets\set0_seed42\test_mask_42"
-        process_directory(path)
-
-    path = rf"F:\solardnn\Germany\tile_subsets\mask_set0_seed42"
-    process_directory(path)
-    path = rf"F:\solardnn\Germany\tile_subsets\mask_setfinal_seed42"
-    process_directory(path)
-    path = rf"F:\solardnn\Germany\tiles\mask"
+    path = rf"d:\data\solardnn\DE-G\tiles\mask"
     process_directory(path)
