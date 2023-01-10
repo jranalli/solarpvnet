@@ -11,7 +11,7 @@ from utils.fileio import verify_dir
 import importlib.util
 
 
-def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], colors=["#0000ff", "#000088", "#00ff00", "#008800", "#ff00ff", "#ff8800", "#aaaa00"]):
+def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], colors=["#0000ff", "#000088", "#00ff00", "#008800", "#ff00ff", "#ff8800", "#aaaa00"], overwrite=False):
     # Get the filenames from one of the predictions
     img_paths = glob.glob(os.path.join(pred_dirs[0], "*.png"))
     imgs = [os.path.basename(img_path) for img_path in img_paths]
@@ -29,6 +29,10 @@ def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=
     for i, img in enumerate(looper):
         if verbose and not importlib.util.find_spec("tqdm"):
             print(f"{i}/{len(imgs)}")
+
+        if os.path.exists(os.path.join(out_dir, img)) and not overwrite:
+            print(f"File: {img} exists. Skip.")
+            continue
 
         fig, axes = plt.subplots(1, cols, figsize=(cols * figsize, figsize))
 
@@ -82,7 +86,7 @@ def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=
 
 
 
-def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"]):
+def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], overwrite=False):
 
     bkg_alpha = 0.5
     fg_alpha = 0.5
@@ -107,6 +111,10 @@ def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True
     for img in looper:
         if verbose and not importlib.util.find_spec("tqdm"):
             print(f"{i}/{len(imgs)}")
+
+        if os.path.exists(os.path.join(out_dir, img)) and not overwrite:
+            print(f"File: {img} exists. Skip.")
+            continue
 
         fig, axes = plt.subplots(1, cols, figsize=(cols * figsize, figsize))
         for axis, title in zip(axes, titles):
@@ -182,40 +190,6 @@ def binarize(image, thresh=0):
     return image
 
 
-def demo_manual():
-    fn = "002140_12.png"
-    base = fr"d:\solardnn\tst\img\{fn}"
-    baseim = Image.open(base)
-    plt.imshow(baseim, alpha=0.75)
-
-    truth = fr"d:\solardnn\tst\mask\{fn}"
-    f = Image.open(truth)
-    g = bkg_to_alpha(mask_colorize(mask_to_boundary(f, size=9), "#ff0000"))
-    plt.imshow(g)
-
-    handles, labels = plt.gca().get_legend_handles_labels()
-    legend_entry = Line2D([0], [0], label="Truth", color="#ff0000")
-    handles.append(legend_entry)
-
-    for model, color in zip(["CA-F", "DE-G", "NY-Q"],
-                            ["#00ff00", "#009900", "#005500"]):
-        # for model, color in zip(["CA-F"],["#00ff00"]):
-        im = fr"d:\solardnn\tst\{model}\{fn}"
-        imo = Image.open(im)
-        imo = imo.resize(baseim.size)
-        imo = binarize(imo, 50)
-        brd = bkg_to_alpha(
-            mask_colorize(
-                mask_to_boundary(imo, size=3),
-                color=color))
-        plt.imshow(brd)
-        legend_entry = Line2D([0], [0], label=model, color=color)
-        handles.append(legend_entry)
-
-    plt.legend(handles=handles)
-    plt.show()
-
-
 if __name__ == "__main__":
     # model_names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "CMB-6", "CMB-5A"]
     model_names = ["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "CMB-6"]
@@ -229,7 +203,6 @@ if __name__ == "__main__":
     boundary_plots = False
     multi_plots = True
 
-
     for test_site in test_sites:
         test_img_path = fr"d:\data\solardnn\{test_site}\tiles\img"
         test_mask_path = fr"d:\data\solardnn\{test_site}\tiles\mask"
@@ -237,14 +210,6 @@ if __name__ == "__main__":
         pred_dirs = []
         for model in model_names:
             pred_dirs.append(os.path.join(data_root, fr"{model}\predictions\{model}_{backbone}_{seed}_v{model_ver}_predicting_{test_site}\pred_masks"))
-        # pred_dirs = [os.path.join(data_root, fr"CA-F\CA-F_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              os.path.join(data_root, fr"CA-S\CA-S_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              os.path.join(data_root, fr"FR-I\FR-I_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              os.path.join(data_root, fr"FR-G\FR-G_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              os.path.join(data_root, fr"DE-G\DE-G_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              os.path.join(data_root, fr"NY-Q\NY-Q_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              os.path.join(data_root, fr"CMB-6\CMB-6_{backbone}_{seed}_v{model_ver}_predicting_{site}\pred_masks"),
-        #              ]
 
         if boundary_plots:
             outdir = os.path.join(data_root, fr"results\{backbone}_{seed}_{model_ver}\test_{test_site}\boundary")

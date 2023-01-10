@@ -1,9 +1,6 @@
 import glob
 
-
-
 import csv
-
 
 from model.dataset_manipulation import reshape_inputs
 import os
@@ -16,15 +13,15 @@ from sklearn.model_selection import train_test_split
 from keras.callbacks import ModelCheckpoint, CSVLogger
 from keras.optimizers import Adam, SGD
 
-
 import segmentation_models as sm
 
-from utils.fileio import read_file_list
+from utils.fileio import read_file_list, verify_dir, is_dir_empty
 
 
 def eval_model(test_img_dir, test_mask_dir, test_img_file, test_mask_file, weight_file, result_file, pred_dir,
-               plot_dir=None, backbone="resnet34", img_size=(576, 576), batchnorm=False):
+               plot_dir=None, backbone="resnet34", img_size=(576, 576), batchnorm=False, overwrite=False):
     """
+    Perform the evaluation of the model
 
     Parameters
     ----------
@@ -50,21 +47,29 @@ def eval_model(test_img_dir, test_mask_dir, test_img_file, test_mask_file, weigh
         Image size in (xxx, yyy)
     batchnorm: bool (default: False)
         Use batchnorm
+    overwrite: bool (default: False)
+        Should files be overwritten?
     """
 
     # test and create directories
-    if not os.path.isdir(pred_dir):
-        os.makedirs(pred_dir)
-    else:
-        shutil.rmtree(pred_dir)
-        os.makedirs(pred_dir)
+    verify_dir(pred_dir)
+    if not is_dir_empty(pred_dir):
+        if not overwrite:
+            print("Prediction directory is not empty, skipping operation...")
+            return
+        else:
+            shutil.rmtree(pred_dir)
+            verify_dir(pred_dir)
 
     if plot_dir is not None:
-        if not os.path.isdir(plot_dir):
-            os.makedirs(plot_dir)
-        else:
-            shutil.rmtree(plot_dir)
-            os.makedirs(plot_dir)
+        verify_dir(plot_dir)
+        if not is_dir_empty(plot_dir):
+            if not overwrite:
+                print("Plot directory is not empty, skipping operation...")
+                return
+            else:
+                shutil.rmtree(plot_dir)
+                verify_dir(plot_dir)
 
     # Get the list of all input/output files
     images = read_file_list(test_img_file, test_img_dir)
@@ -195,17 +200,5 @@ def mask_to_red(mask):
 
 
 if __name__ == '__main__':
-    mysize = 576
-
-    mybackbone = "resnet34"
-    myseed = 42
-
-    myimages = f"c:\\nycdata\\sample_subset\\tiles\\test_img_{myseed}"
-    mymasks = f"c:\\nycdata\\sample_subset\\tiles\\test_mask_{myseed}"
-    myweightfile = f"c:\\nycdata\\sample_subset\\results\\{mybackbone}_{myseed}_weights_best.h5"
-
-    mypreddir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\pred"
-    myplotdir = f"c:\\nycdata\\sample_subset\\results\\results_{mybackbone}_{myseed}\\plot"
-    myresultfile = "c:\\nycdata\\sample_subset\\results\\performance.csv"
-    eval_model(myimages, mymasks, myweightfile, myresultfile, mypreddir,
-               myplotdir, backbone=mybackbone, img_size=(mysize, mysize))
+    pass
+    # this is obsolete. Rewrite?

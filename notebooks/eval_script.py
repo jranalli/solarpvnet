@@ -1,8 +1,12 @@
 from model.dataset_manipulation import test_train_valid_split, make_combo_dataset_txt
 from model.train_model import train_unet
 from model.eval_model import eval_model
+
+from postprocess.images_to_plots import multimodel_plot, model_boundary_plot
+from postprocess.summarize_results import generate_run_summary
 import os
 import gc
+from collections import OrderedDict
 
 
 def run():
@@ -13,18 +17,21 @@ def run():
 
     test_sets = ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"]
     train_sets = test_sets + ["CMB-6", "CMB-5A"]
+    train_sets = test_sets + ["CMB-6"]
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
-                  "CMB-5A": ["CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"], # Excludes CA-F
+                  "CMB-5A": ["CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],  # Excludes CA-F
                   }
 
     # ## Dataset ##
     do_build_datasets = True
+
     splits = [0.2, 0.72, 0.08]  # Test, Train, Valid
     myseeds = [42]
     n_set = 1000
 
     # ## Train ##
     do_train_models = True
+
     mybackbones = ["resnet34"]
     mysize = 576
     epochs = 200
@@ -35,8 +42,16 @@ def run():
 
     # ## Test ##
     do_test_models = True
+
     do_plots = False
     test_weights = 'best'
+
+    # ## Post ##
+    do_post = True
+
+    do_summary = True
+    do_boundary_plots = False
+    do_multi_plots = True
 
     # #### END SETTINGS ####
 
@@ -58,6 +73,10 @@ def run():
     if do_test_models:
         print("\n\n===== TESTING =====\n\n")
         eval_models(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, mysize, norm, test_weights, do_plots)
+
+    if do_post:
+        print("\n\n===== POST =====\n\n")
+        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_boundary_plots, do_multi_plots)
 
 
 def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, test_sets):
@@ -88,6 +107,9 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
             - best_weights: Location of best weights file. e.g. d:/solardnn/NY-Q/models/NY-Q_resnet34_42_v1_weights_best.h5
             - final_weights: Location of final weights file. e.g. d:/solardnn/NY-Q/models/NY-Q_resnet34_42_v1_weights_final.h5
             - train_log: Location of log file from training. e.g. d:/solardnn/NY-Q/models/NY-Q_resnet34_42_v1_trainlog.csv
+            - result_root: Location of global results when using any model with these configurations. e.g. d:/solardnn/results/resnet34_42_v1
+            - summary_file: Location of global results Excel summary when any model with these configurations. e.g. d:/solardnn/results/resnet34_42_v1/resnet34_42_v1_summary.xlsx
+            ** Note: result_root and summary_file don't depend on the train set at all, because they are computed across multiple train sets
         test_set:
             Stores info about the outputs when we test a model. Stored nested below the predictions root dir for the
             training set. The subdir name will always be /{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}/
@@ -97,6 +119,10 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
                 e.g. d:/solardnn/NY-Q/predictions/NY-Q_resnet34_42_v1_predicting_CA-F/plots
             - result file: The location of the datafile for the prediction summary
                 e.g. d:/solardnn/NY-Q/predictions/NY-Q_resnet34_42_v1_predicting_CA-F/NY-Q_resnet34_42_v1_predicting_CA-F_data.csv
+            - boundary_plot_root: Location of global boundary plot results when using this test set. e.g. d:/solardnn/results/resnet34_42_v1/CA-F_test/boundary_plot
+            - multi_plot_root: Location of global multi-model plot results when using this test set. e.g. d:/solardnn/results/resnet34_42_v1/CA-F_test/multi_plot
+            ** Note: boundary_plot_root and multi_plot_root don't depend on the train set at all, because they are computed across multiple train sets
+            ** Thus, they can be called for the test_set in both set slots. i.e. paths[test_set][seed][backbone][model_rev][test_set]['boundary_plot_root']
 
 
     Parameters
@@ -166,17 +192,23 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
                     paths[train_set][seed][backbone][model_rev]['train_log'] = os.path.join(modeloutroot,
                                                                                             f"{train_set}_{backbone}_{seed}_v{model_rev}_trainlog.csv")
 
+                    global_result_root_dir = os.path.join(data_root_dir, fr"results\{backbone}_{seed}_{model_rev}")
+                    summary_file = os.path.join(global_result_root_dir, rf"{backbone}_{seed}_v{model_rev}_summary.xlsx")
+                    paths[train_set][seed][backbone][model_rev]['result_root'] = global_result_root_dir
+                    paths[train_set][seed][backbone][model_rev]['summary_file'] = summary_file
+
                     for test_set in test_sets:
-                        paths[train_set][seed][backbone][test_set] = {}
-                        paths[train_set][seed][backbone][test_set]['prediction_dir'] = os.path.join(predictionroot,
-                                                                                                    f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}",
-                                                                                                    "pred_masks")
-                        paths[train_set][seed][backbone][test_set]['plot_dir'] = os.path.join(predictionroot,
-                                                                                              f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}",
-                                                                                              "plots")
-                        paths[train_set][seed][backbone][test_set]['result_file'] = os.path.join(predictionroot,
-                                                                                                 f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}",
-                                                                                                 f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}_data.csv")
+                        paths[train_set][seed][backbone][model_rev][test_set] = {}
+                        test_result_subdir = os.path.join(predictionroot, f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}")
+                        paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir'] = os.path.join(test_result_subdir, "pred_masks")
+                        paths[train_set][seed][backbone][model_rev][test_set]['plot_dir'] = os.path.join(test_result_subdir, "plots")
+                        paths[train_set][seed][backbone][model_rev][test_set]['result_file'] = os.path.join(test_result_subdir, f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}_data.csv")
+
+                        boundary_plot_dir = os.path.join(global_result_root_dir, rf"{test_set}_test", "boundary_plot")
+                        multi_plot_dir = os.path.join(global_result_root_dir, rf"{test_set}_test", "multi_plot")
+
+                        paths[train_set][seed][backbone][model_rev][test_set]['boundary_plot_root'] = boundary_plot_dir
+                        paths[train_set][seed][backbone][model_rev][test_set]['multi_plot_root'] = multi_plot_dir
 
     return paths
 
@@ -356,11 +388,11 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
                             print("Weights not found!")
                             continue
 
-                        pred_dir = paths[train_set][seed][backbone][test_set]['prediction_dir']
-                        res_file = paths[train_set][seed][backbone][test_set]['result_file']
+                        pred_dir = paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir']
+                        res_file = paths[train_set][seed][backbone][model_rev][test_set]['result_file']
 
                         if gen_plots:
-                            plot_dir = paths[train_set][seed][backbone][test_set]['plot_dir']
+                            plot_dir = paths[train_set][seed][backbone][model_rev][test_set]['plot_dir']
                         else:
                             plot_dir = None
 
@@ -368,6 +400,76 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
                                    backbone=backbone, img_size=(img_size, img_size), batchnorm=batchnorm)
 
                         gc.collect()
+
+
+def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_boundary_plots=False, gen_multi_plots=False):
+    """
+        Wrapper to help perform the postprocessing for a large set of models
+
+        Parameters
+        ----------
+        paths: nested dict
+            Output from configure_paths(). See docs for configure_paths() for a description.
+        train_sets: list[str]
+            List of strings representing all the training sets to consider. e.g. ['CA-F','NY-Q','CMB-6']
+        seeds: list[int]
+            List of all seeds to consider. e.g. [42]
+        backbones: list[str]
+            List of all backbones to run. e.g. ['resnet34','resnet50']
+        model_revs: list[str]
+            List of revision flags to add to the models. Note that these will be appended to filenames but will have no impact on the runs.
+            Technically could probably be any type.
+            e.g. [1]
+        test_sets: list[str]
+            List of strings representing all the test data sets to consider. These should never include combos.
+            e.g. ['CA-F','NY-Q']
+        gen_summary: bool (default True)
+            Should global summary file be generated?
+        gen_boundary_plots: bool (default False)
+            Should global boundary comparison plots be generated?
+        gen_multi_plots: bool (default False)
+            Should global multi_plot representations be generated?
+        """
+    for seed in seeds:
+        for backbone in backbones:
+            for model_rev in model_revs:
+                if gen_summary:
+                    # These happen at a global level assuming multiple models all trained the same way, but spanning
+                    # all train sets against all test sets
+
+                    # Build the nested list of files that will be summarized
+                    res_files = OrderedDict()
+                    summary_file = paths[train_sets[0]][seed][backbone][model_rev]['summary_file']
+                    for test_set in test_sets:
+                        res_files[test_set] = OrderedDict()
+                        for train_set in train_sets:
+                            res_files[test_set][train_set] = paths[train_set][seed][backbone][model_rev][test_set][
+                                'result_file']
+                    # Do the summary
+                    generate_run_summary(res_files, summary_file)
+
+                # The summary plots occur for an entire test set but encompass multiple training sets
+                for test_set in test_sets:
+                    test_img_path = paths[test_set]['img_root']
+                    test_mask_path = paths[test_set]['mask_root']
+
+                    pred_dirs = []
+                    for train_set in train_sets:
+                        pred_dirs.append(paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir'])
+
+                    if gen_boundary_plots:
+                        # All train_sets have the same directories paths, so just use test_set as the train_set
+                        bnddir = paths[test_set][seed][backbone][model_rev][test_set]['boundary_plot_root']
+
+                        print(f"\n=={test_set} BORDER==")
+                        model_boundary_plot(test_img_path, test_mask_path, pred_dirs, bnddir, model_names=train_sets)
+
+                    if gen_multi_plots:
+                        # All train_sets have the same directories paths, so just use test_set as the train_set
+                        multidir = paths[test_set][seed][backbone][model_rev][test_set]['multi_plot_root']
+
+                        print(f"\n=={test_set} COMBO==")
+                        multimodel_plot(test_img_path, test_mask_path, pred_dirs, multidir, model_names=train_sets)
 
 
 if __name__ == "__main__":
