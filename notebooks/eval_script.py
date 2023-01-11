@@ -4,6 +4,7 @@ from model.eval_model import eval_model
 
 from postprocess.images_to_plots import multimodel_plot, model_boundary_plot
 from postprocess.summarize_results import generate_run_summary
+from postprocess.imagewise_metrics import aggregate_imagewise_metrics
 import os
 import gc
 from collections import OrderedDict
@@ -16,10 +17,15 @@ def run():
     dataroot = os.path.join("d:", "data", 'solardnn')
 
     test_sets = ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"]
-    train_sets = test_sets + ["CMB-6", "CMB-5A"]
-    train_sets = test_sets + ["CMB-6"]
+    train_sets = test_sets + ["CMB-6", "CMB-5-CA-F", "CMB-5-CA-S", "CMB-5-FR-G", "CMB-5-FR-I", "CMB-5-DE-G", "CMB-5-NY-Q"]
+    
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
-                  "CMB-5A": ["CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],  # Excludes CA-F
+                  "CMB-5-CA-F": ["CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],  # Excludes CA-F
+                  "CMB-5-CA-S": ["CA-F", "FR-G", "FR-I", "DE-G", "NY-Q"],  # Excludes CA-S
+                  "CMB-5-FR-G": ["CA-F", "CA-S", "FR-I", "DE-G", "NY-Q"],  # Excludes FR-G
+                  "CMB-5-FR-I": ["CA-F", "CA-S", "FR-G", "DE-G", "NY-Q"],  # Excludes FR-I
+                  "CMB-5-DE-G": ["CA-F", "CA-S", "FR-G", "FR-I", "NY-Q"],  # Excludes DE-G
+                  "CMB-5-NY-Q": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G"],  # Excludes NY-Q
                   }
 
     # ## Dataset ##
@@ -51,7 +57,8 @@ def run():
 
     do_summary = True
     do_boundary_plots = False
-    do_multi_plots = True
+    do_multi_plots = False
+    do_imagewise_metrics = True
 
     # #### END SETTINGS ####
 
@@ -76,7 +83,7 @@ def run():
 
     if do_post:
         print("\n\n===== POST =====\n\n")
-        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_boundary_plots, do_multi_plots)
+        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_boundary_plots, do_multi_plots, do_imagewise_metrics)
 
 
 def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, test_sets):
@@ -209,6 +216,7 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
 
                         paths[train_set][seed][backbone][model_rev][test_set]['boundary_plot_root'] = boundary_plot_dir
                         paths[train_set][seed][backbone][model_rev][test_set]['multi_plot_root'] = multi_plot_dir
+                        paths[train_set][seed][backbone][model_rev][test_set]['imagewise_metric_file'] = os.path.join(global_result_root_dir, rf"{test_set}_test", f"{backbone}_{seed}_v{model_rev}_{test_set}_imgmetrics.xlsx")
 
     return paths
 
@@ -402,7 +410,7 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
                         gc.collect()
 
 
-def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_boundary_plots=False, gen_multi_plots=False):
+def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False):
     """
         Wrapper to help perform the postprocessing for a large set of models
 
@@ -429,6 +437,8 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
             Should global boundary comparison plots be generated?
         gen_multi_plots: bool (default False)
             Should global multi_plot representations be generated?
+        gen_imagewise_metrics: bool (default False)
+            Should imagewise metrics be calculated?
         """
     for seed in seeds:
         for backbone in backbones:
@@ -453,10 +463,12 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
                     test_img_path = paths[test_set]['img_root']
                     test_mask_path = paths[test_set]['mask_root']
 
+                    # Build a list of the prediction directories for all the training sets (this is an input)
                     pred_dirs = []
                     for train_set in train_sets:
                         pred_dirs.append(paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir'])
 
+                    # Generate the plots
                     if gen_boundary_plots:
                         # All train_sets have the same directories paths, so just use test_set as the train_set
                         bnddir = paths[test_set][seed][backbone][model_rev][test_set]['boundary_plot_root']
@@ -470,6 +482,12 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
 
                         print(f"\n=={test_set} COMBO==")
                         multimodel_plot(test_img_path, test_mask_path, pred_dirs, multidir, model_names=train_sets)
+
+                    # Run the metrics
+                    if gen_imagewise_metrics:
+                        print(f"\n=={test_set} Imagewise==")
+                        imgmetricfile = paths[test_set][seed][backbone][model_rev][test_set]['imagewise_metric_file']
+                        aggregate_imagewise_metrics(test_mask_path, pred_dirs, imgmetricfile, model_names=train_sets)
 
 
 if __name__ == "__main__":

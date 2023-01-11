@@ -1,5 +1,54 @@
 from PIL import Image
 import numpy as np
+from utils.fileio import verify_dir
+
+import glob
+import os
+import pandas as pd
+
+import importlib
+
+
+def aggregate_imagewise_metrics(truth_dir, pred_dirs, out_file, model_names, threshold=0.5, overwrite=False):
+    if os.path.exists(out_file) and not overwrite:
+        print(f"Output imagewise metric file exists: skipping...")
+        return
+    verify_dir(os.path.dirname(out_file))
+
+    # Get the filenames from one of the predictions
+    img_paths = glob.glob(os.path.join(pred_dirs[0], "*.png"))
+    imgs = [os.path.basename(img_path) for img_path in img_paths]
+
+    col_names = list(model_names)
+    row_names = list(imgs)
+    iou_score = pd.DataFrame([], index=row_names, columns=col_names)
+    precision = iou_score.copy(deep=True)
+    recall = iou_score.copy(deep=True)
+    f1_score = iou_score.copy(deep=True)
+
+    if importlib.util.find_spec("tqdm"):
+        from tqdm import tqdm
+        looper = tqdm(imgs)
+    else:
+        looper = imgs
+
+    for j, img in enumerate(looper):  # rows
+        truth_fn = os.path.join(truth_dir, img)
+        for i, pred_dir in enumerate(pred_dirs):  # cols
+            pred_fn = os.path.join(pred_dir, img)
+
+            iou_im, p_im, r_im, f1_im = compute_imagewise_metrics(truth_fn, pred_fn, threshold)
+
+            iou_score.iloc[j,i] = iou_im
+            precision.iloc[j,i] = p_im
+            recall.iloc[j,i] = r_im
+            f1_score.iloc[j,i] = f1_im
+
+    with pd.ExcelWriter(out_file) as w:
+        iou_score.to_excel(w, sheet_name="iou_score")
+        precision.to_excel(w, sheet_name="precision")
+        recall.to_excel(w, sheet_name="recall")
+        f1_score.to_excel(w, sheet_name="f1_score")
 
 
 def compute_imagewise_metrics(truth_file, prediction_file, threshold=0.5):
