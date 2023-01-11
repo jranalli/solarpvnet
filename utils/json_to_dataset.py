@@ -271,7 +271,12 @@ target_dir = 'C:\\nycdata\\boro_queens_sp18_png\\'
 ot_dir = 'C:\\nycdata\\boro_queens_sp18_out\\'
 
 if __name__ == "__main__":
-    label_id_dict = {"_background_": 0, "maybe": 0, "notpv": 0, "pv": 255}
+    # label_id_dict = {"_background_": 0, "maybe": 0, "notpv": 0, "pv": 255}
+    #
+    # for fn in files_of_type(target_dir, "*.json"):
+    #     labelme_json_to_binary(fn, ot_dir, label_id_dict)
 
-    for fn in files_of_type(target_dir, "*.json"):
-        labelme_json_to_binary(fn, ot_dir, label_id_dict)
+    label_id_dict = {"_background_": 0, "maybe": 0, "notpv": 0, "pv": 255}
+    tst = r"D:\datasets\PV Aerial\NY\img\002200.json"
+    ot_dir = r"d:\tst"
+    labelme_json_to_binary(tst, ot_dir, label_id_dict)
