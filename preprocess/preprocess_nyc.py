@@ -38,7 +38,8 @@ for fn in fns:
                                  label_name_to_value={"_background_": 0,
                                                       "maybe": 0,
                                                       "notpv": 0,
-                                                      "pv": 255})
+                                                      "pv": 255},
+                                 layer_order=["_background_", "pv", "maybe", "notpv"])
 
 
 print("== Slice Images ==")

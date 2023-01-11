@@ -67,10 +67,10 @@ def shape_to_mask(img_shape, points, shape_type=None,
     return mask
 
 
-def shapes_to_label(img_shape, shapes, label_name_to_value):
+def shapes_to_label(img_shape, shapes, label_name_to_value, layer_order=None):
     """
-    Directly copied from labelme.utils: https://github.com/wkentaro/labelme
-    Eliminates full dependency on labelme
+    Modified from labelme.utils: https://github.com/wkentaro/labelme
+    includes sorting
 
     Parameters
     ----------
@@ -80,6 +80,9 @@ def shapes_to_label(img_shape, shapes, label_name_to_value):
     label_name_to_value: dict
         a dict connecting polygon label names to the numeric id that should be
         displayed in the output array
+    layer_order: list (default None)
+        A list of the layer order using the keys in label_name_to_value.
+        Must match keys in label_name_to_value. If None, uses numeric value to sort
 
     Returns
     -------
@@ -89,10 +92,20 @@ def shapes_to_label(img_shape, shapes, label_name_to_value):
         mask of instance ids for each shape
 
     """
+
+    if layer_order is None:
+        # Default to increasing numeric value
+        layer_order = sorted(label_name_to_value.keys(), key=lambda x: label_name_to_value[x])
+    else:
+        # Check to make sure all keys exist. If they don't, insert as bottom layers.
+        for key in label_name_to_value.keys():
+            if key not in layer_order:
+                layer_order.insert(0, key)
+
     cls = np.zeros(img_shape[:2], dtype=np.int32)
     ins = np.zeros_like(cls)
     instances = []
-    for shape in shapes:
+    for shape in sorted(shapes, key=lambda x: layer_order.index(x["label"])):
         points = shape["points"]
         label = shape["label"]
         group_id = shape.get("group_id")
@@ -115,7 +128,7 @@ def shapes_to_label(img_shape, shapes, label_name_to_value):
     return cls, ins
 
 
-def labelme_json_to_binary(json_file, mask_dir, label_name_to_value,
+def labelme_json_to_binary(json_file, mask_dir, label_name_to_value, layer_order=None,
                            img_ext="png", overwrite=False):
     """
     Adapted from labelme.cli.json_to_dataset
@@ -133,6 +146,9 @@ def labelme_json_to_binary(json_file, mask_dir, label_name_to_value,
     label_name_to_value: dict
         a dict connecting polygon label names to the numeric id that should be
         displayed in the output array
+    layer_order: list
+        A list of the layer order using the keys in label_name_to_value.
+        Must match keys in label_name_to_value. If None, uses numeric value to sort
     img_ext: str (default "png")
         str of the file extension for the output image.
     overwrite: bool (default False)
@@ -167,7 +183,7 @@ def labelme_json_to_binary(json_file, mask_dir, label_name_to_value,
             value_pairs[label_name] = label_value
 
     # Convert shapes to mask
-    lbl, _ = shapes_to_label(imshape, data["shapes"], value_pairs)
+    lbl, _ = shapes_to_label(imshape, data["shapes"], value_pairs, layer_order)
     lbl_pil = PIL.Image.fromarray(lbl.astype(np.uint8), mode="P")
 
     # Generate the output filename
@@ -276,7 +292,8 @@ if __name__ == "__main__":
     # for fn in files_of_type(target_dir, "*.json"):
     #     labelme_json_to_binary(fn, ot_dir, label_id_dict)
 
-    label_id_dict = {"_background_": 0, "maybe": 0, "notpv": 0, "pv": 255}
+    label_id_dict = {"_background_": 0, "maybe": 0, "pv": 255, "notpv": 0}
+    layer_order = ["pv", "notpv"]
     tst = r"D:\datasets\PV Aerial\NY\img\002200.json"
     ot_dir = r"d:\tst"
-    labelme_json_to_binary(tst, ot_dir, label_id_dict)
+    labelme_json_to_binary(tst, ot_dir, label_id_dict, layer_order=layer_order, overwrite=True)
