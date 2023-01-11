@@ -1,61 +1,88 @@
-import segmentation_models.metrics as m
-from segmentation_models.base.functional import round_if_needed
 from PIL import Image
 import numpy as np
-import tensorflow as tf
-
-gt = r"D:\data\solardnn\NY-Q\tiles\mask\002200_62.png"
-pt = r"D:\data\solardnn\NY-Q\predictions\NY-Q_resnet34_42_v1_predicting_NY-Q\pred_masks\002200_62.png"
-size = 576
-
-t = np.array([0.9])
-
-r = m.Recall(threshold=t)
-p = m.Precision(threshold=t)
-i = m.IOUScore(threshold=t)
-with Image.open(gt) as i1:
-    gt = np.array(i1.resize((size, size)))/255
-    gta = gt.copy()
-    gt = np.expand_dims(gt, 2)
-    gt = tf.convert_to_tensor(gt, dtype=np.float32)
-
-with Image.open(pt) as i2:
-    pt = np.array(i2)[:,:,0]/255
-    pta = pt.copy()
-    pt = np.expand_dims(pt, 2)
-    pt = tf.convert_to_tensor(pt, dtype=np.float32)
 
 
+def compute_imagewise_metrics(truth_file, prediction_file, threshold=0.5):
+    """
+    Compute metrics for an individual image mask pair
 
-v = r(gt, pt)
-p = p(gt, pt)
-i = i(gt, pt)
+    Parameters
+    ----------
+    truth_file: str
+        full context of ground truth mask
+    prediction_file: str
+        full context of prediction mask
+    threshold: float
+        A threshold value that will be applied to determine the level of prediction that constitutes "true".
+        Should be between 0-1 as masks will be normed.
 
-print(f"Recall Keras: {v}")
-print(f"Precision Keras: {p}")
-print(f"IOU Keras: {i}")
+    Returns
+    -------
+    metrics: float
+        return iou, precision, recall, f1
+    """
+    # Load images
+    with Image.open(prediction_file) as i2:
+        pt = np.array(i2)[:, :, 0]  # Predictions are RGB for some reason
+        pt = pt/np.max(pt)  # normalize
+    with Image.open(truth_file) as i1:
+        gt = np.array(i1.resize(pt.shape))  # Reshape to match prediction
+        gt = gt/np.max(gt)
+
+    # Compute Truth Table
+    tot = np.size(pt)  # total pix
+    pp = pt > threshold  # predicted positives, array
+    tp = gt * pp  # true positives, array
+
+    n_pp = np.sum(pp)  # n of predicted positives
+    n_pn = tot - n_pp  # n of predicted negatives (all pix - positives)
+
+    n_tp = np.sum(tp)  # n of true positives
+    n_fp = n_pp - n_tp  # n of false positives
+    n_fn = np.sum(gt) - n_tp  # n of false negatives (actual positives - true positives)
+    n_tn = n_pn - n_fn  # n of true negatives
+
+    # Metric Definitions
+    recall = n_tp / (n_tp + n_fn)
+    precision = n_tp / (n_tp + n_fp)
+    iou = n_tp / (n_tp + n_fp + n_fn)
+    f1 = 2 * n_tp / (2 * n_tp + n_fp + n_fn)
+
+    return iou, precision, recall, f1
+
+    # # This can also be done with tensorflow, but it took roughly 10x the time of the manual method
+    # import tensorflow as tf
+    # recall = tf.keras.metrics.Recall(thresholds=[threshold])
+    # precis = tf.keras.metrics.Precision(thresholds=[threshold])
+    # iou = tf.keras.metrics.IoU(num_classes=2, target_class_ids=[1])  # 2 classes (0 and 1), target is id 1 of those.
+    #
+    # # gt = <Normalized Truth Image Array>
+    # # pt = <Normalized Prediction Image Array>
+    #
+    # recall.reset_state() # Not strictly necessary but needed to reset when adding more
+    # recall.update_state(gt, pt)
+    # print(recall.result().numpy())
+    #
+    # precis.reset_state()
+    # precis.update_state(gt, pt)
+    # print(precis.result().numpy())
+    #
+    # iou.reset_state()
+    # iou.update_state(gt, pt > threshold)
+    # print(iou.result().numpy())
 
 
-pp = tf.cast(pt>t, tf.float32)
-tp = gt*pp
+def run():
+    truth_file = r"D:\data\solardnn\NY-Q\tiles\mask\002200_62.png"
+    prediction_file = r"D:\data\solardnn\NY-Q\predictions\NY-Q_resnet34_42_v1_predicting_NY-Q\pred_masks\002200_62.png"
+    threshold = 0.5
 
-print(f"Recall Man: {np.sum(tp)/np.sum(gt)}")
-print(f"Precision Man: {np.sum(tp)/np.sum(pp)}")
+    iou, precision, recall, f1 = compute_imagewise_metrics(truth_file, prediction_file, threshold)
+    print(iou)
+    print(precision)
+    print(recall)
+    print(f1)
 
-gt = gta
-pt = pta
 
-
-tot = np.size(pt)
-pp = pt>t
-
-pn = np.size(pt) - np.sum(pp)
-
-tp = np.sum(gt * pp)
-fp = np.sum(pp) - tp
-fn = np.sum(gt) - tp
-tn = pn - fn
-
-print(f"Recall NP: {tp/(tp+fn)}")
-print(f"Precision NP: {tp/(tp+fp)}")
-print(f"IOU NP: {tp/(tp+fp+fn)}")
+if __name__ == "__main__":
+    run()
