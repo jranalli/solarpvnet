@@ -16,3 +16,6 @@ jupyter
 For summarize_dataset
 pandas
 openpyxl
+
+Optional for better loop displays:
+tqdm
