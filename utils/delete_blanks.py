@@ -67,6 +67,57 @@ def delete_blank_tiles(img_dir, mask_dir, maxfrac=0, seed=None, img_ext="png"):
         align_datasets(mask_dir, img_dir)
 
 
+def list_blank_tiles(img_dir, mask_dir, obj_list_file, blank_list_file, img_ext="png", overwrite=True):
+    """
+    Look at a combined dataset of label masks and corresponding images. Find
+    the masks that are blank and create separate lists of blank and not-blank
+    tiles.
+
+    Parameters
+    ----------
+    img_dir: str
+        Full path where the image files exist
+    mask_dir: str
+        Full path where the mask files exist (all filenames must repeat in
+        imgdir!)
+    img_ext: str (default 'png')
+        String of the image filetype
+    overwrite: bool (default True)
+        Overwrite the output files
+    """
+
+    if os.path.exists(obj_list_file) or os.path.exists(blank_list_file):
+        if not overwrite:
+            print("list_blank_tiles() - Output file exists, halting.")
+            return
+
+    # Get a list of all files in each location
+    maskfns = files_of_type(mask_dir, "*." + img_ext)
+    imgfns = files_of_type(img_dir, "*." + img_ext)
+
+    # Require that all the masks have a corresponding image file
+    imgs = [os.path.basename(f) for f in imgfns]
+    if not all(os.path.basename(fn) in imgs for fn in maskfns):
+        raise ValueError("All mask files must have a matching image file.")
+
+    # Idenfity blank masks
+    blanks = []
+    have_objs = []
+    for fn in maskfns:
+        with Image.open(fn) as img:
+            # getbbox() returns bounding box of objects in the image
+            if not img.getbbox():
+                blanks.append(fn)
+            else:
+                have_objs.append(fn)
+
+    with open(obj_list_file, 'w') as f:
+        f.write("\n".join([fn for fn in have_objs]))
+
+    with open(blank_list_file, 'w') as f:
+        f.write("\n".join([fn for fn in blanks]))
+
+
 def align_datasets(folder_a, folder_b, img_ext="png"):
     """
     Take two folders, search through and delete any files that appear in only

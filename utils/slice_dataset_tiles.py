@@ -1,13 +1,5 @@
 from PIL import Image
 import numpy as np
-import glob
-import shutil
-import os
-
-from utils.fileio import verify_dir, files_of_type
-
-# https://github.com/whiplashoo/split-image
-from split_image import split_image
 
 
 def calc_rowcol(img_file, slice_width, slice_height):
@@ -62,10 +54,14 @@ def calc_rowcol(img_file, slice_width, slice_height):
 #                 output_dir=out_dir)
 
 
-# Example directory for testing
-mydir = 'C:\\nycdata\\tst\\'
-outdir = 'C:\\nycdata\\tstout\\'
-
 if __name__ == "__main__":
+    # Example directory for testing
+    mydir = 'C:\\nycdata\\tst\\'
+    outdir = 'C:\\nycdata\\tstout\\'
+
+    # https://github.com/whiplashoo/split-image
+    from split_image import split_image
+    from utils.fileio import files_of_type
+
     for fn in files_of_type(mydir, "*.png"):
         split_image(fn, 8, 8, False, False, True, output_dir=outdir)
