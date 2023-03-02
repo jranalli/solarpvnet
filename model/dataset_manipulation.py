@@ -126,7 +126,6 @@ def test_train_valid_split_list(img_files, mask_files, output_root, n_set=None,
         if os.path.exists(i_file):
             if not overwrite:
                 print(f"Output file {i_file} exists. Skipping operation.")
-                print(output_root)
                 return test_im_file, test_msk_file, \
                     train_im_file, train_msk_file, \
                     valid_im_file, valid_msk_file
@@ -360,6 +359,7 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
     verify_dir(os.path.dirname(out_file))
     if os.path.exists(out_file) and not overwrite:
         print(f"Output file {out_file} exists. Skipping operation.")
+        return
 
     # Initialize root_paths if it doesn't exist
     if root_paths is None:
