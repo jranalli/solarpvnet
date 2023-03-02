@@ -2,6 +2,7 @@ import json
 import os
 
 from PIL import Image
+import numpy as np
 from utils.fileio import files_of_type
 
 
@@ -61,6 +62,37 @@ def generate_blank_json_dir(target_dir, json_dir=None, img_ext=".png"):
             with Image.open(f) as im:
                 shape = im.size
             generate_blank_json_file(jsonfn, shape)
+
+
+def generate_blank_mask_dir(target_dir, mask_dir, img_ext=".png"):
+    """
+    Loop over a directory and look for any files that don't have a
+    corresponding mask file. Create a blank mask for any with missing mask
+    file.
+
+    Parameters
+    ----------
+    target_dir: str
+        full path of the directory to search
+    mask_dir: str
+        full path of directory that contains the mask files to compare with.
+    img_ext: str (default ".png")
+        Image file extension to search for
+    """
+
+    files = files_of_type(target_dir, "*" + img_ext)
+    # masks = files_of_type(mask_dir, "*" + img_ext)
+
+    for f in files:
+        mask_fn = f.replace(target_dir, mask_dir)
+        if not os.path.exists(mask_fn):
+            # Create the file
+            with Image.open(f) as im:
+                shape = im.size
+                arr = np.zeros(shape[:2], dtype=np.uint8)
+                lbl_pil = Image.fromarray(arr, mode="P")
+                # Generate the output filename
+                lbl_pil.save(mask_fn)
 
 
 # Example directory for testing

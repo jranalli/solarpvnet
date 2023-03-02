@@ -91,31 +91,43 @@ def list_blank_tiles(img_dir, mask_dir, obj_list_file, blank_list_file, img_ext=
             print("list_blank_tiles() - Output file exists, halting.")
             return
 
+    # Create the outputs, which will hold basenames for each
+    blanks = []
+    have_objs = []
+
     # Get a list of all files in each location
     maskfns = files_of_type(mask_dir, "*." + img_ext)
     imgfns = files_of_type(img_dir, "*." + img_ext)
 
     # Require that all the masks have a corresponding image file
     imgs = [os.path.basename(f) for f in imgfns]
-    if not all(os.path.basename(fn) in imgs for fn in maskfns):
+    masks = [os.path.basename(f) for f in maskfns]
+    if not all(fn in imgs for fn in masks):
         raise ValueError("All mask files must have a matching image file.")
 
-    # Idenfity blank masks
-    blanks = []
-    have_objs = []
+    # Look for potential images that aren't in the mask list, those are blank
+    for fn in imgs:
+        if fn not in masks:
+            blanks.append(fn)
+
+    # Loop over mask images and test if it's blank
     for fn in maskfns:
         with Image.open(fn) as img:
             # getbbox() returns bounding box of objects in the image
             if not img.getbbox():
-                blanks.append(fn)
+                blanks.append(os.path.basename(fn))
             else:
-                have_objs.append(fn)
+                have_objs.append(os.path.basename(fn))
+
+    # Make sure they're sorted
+    blanks.sort()
+    have_objs.sort()
 
     with open(obj_list_file, 'w') as f:
-        f.write("\n".join([fn for fn in have_objs]))
+        f.write("\n".join([os.path.basename(fn) for fn in have_objs]))
 
     with open(blank_list_file, 'w') as f:
-        f.write("\n".join([fn for fn in blanks]))
+        f.write("\n".join([os.path.basename(fn) for fn in blanks]))
 
 
 def align_datasets(folder_a, folder_b, img_ext="png"):

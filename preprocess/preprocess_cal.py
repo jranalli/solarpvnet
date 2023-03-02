@@ -2,13 +2,12 @@ import os
 from split_image import split_image
 import utils
 from utils.fileio import files_of_type
-from model.dataset_manipulation import limit_dataset_size, reshape_and_save
 
-drive = "D:\\"
-
-roots = ["solardnn\\Cal_Oxnard\\",
-         "solardnn\\Cal_Stockton\\",
-         "solardnn\\Cal_Fresno\\"]
+drive = "D:"
+data_dir = os.path.join(drive, "datasets", "PV Aerial", "CA")
+roots = [os.path.join(data_dir, "3385807_Oxnard"),
+         os.path.join(data_dir, "3385804_Stockton"),
+         os.path.join(data_dir, "3385828_Fresno")]
 split_sizes = [500, 625, 625]
 
 seed = 42
@@ -17,18 +16,18 @@ n_subset = 1000
 model_size = 576
 
 for root, split_size in zip(roots, split_sizes):
-    root = os.path.join(drive, root)
 
-    img_dir = os.path.join(root, "img")
+    img_dir = os.path.join(root)
     mask_dir = os.path.join(root, "mask")
 
-    tile_dir = os.path.join(root, "tiles\\img")
-    mask_tile_dir = os.path.join(root, "tiles\\mask")
+    tile_dir = os.path.join(root, "tiles", "img")
+    mask_tile_dir = os.path.join(root, "tiles", "mask")
 
-    subset_dir = os.path.join(root, "tile_subsets")
+    list_of_tiles_with_objects = os.path.join(root, "tiles", "object_tiles.txt")
+    list_of_tiles_blank = os.path.join(root, "tiles", "blank_tiles.txt")
 
-    cal_json = os.path.join(drive, "solardnn\\Cal\\3385780_alt\\SolarArrayPolygons.json")
-    cal_csv = os.path.join(drive, "solardnn\\Cal\\3385780_alt\\polygonDataExceptVertices.csv")
+    cal_json = os.path.join(data_dir, "3385780_alt", "SolarArrayPolygons.json")
+    cal_csv = os.path.join(data_dir, "3385780_alt", "polygonDataExceptVertices.csv")
 
     print("== Convert TIF to PNG== ")
     utils.tif_to_png(img_dir, delete=True)
@@ -66,5 +65,5 @@ for root, split_size in zip(roots, split_sizes):
                     should_square=False, should_cleanup=False,
                     should_quiet=True)
 
-    print("== Delete Blanks ==")
-    utils.delete_blank_tiles(tile_dir, mask_tile_dir, maxfrac=0, seed=None)
+    print("== Generate List of Blanks ==")
+    utils.list_blank_tiles(tile_dir, mask_tile_dir, list_of_tiles_with_objects, list_of_tiles_blank)
