@@ -10,8 +10,8 @@ img_dir = os.path.join(root, "images")
 mask_dir = os.path.join(root, "mask")
 json_dir = os.path.join(root, "labels")
 
-list_of_tiles_with_objects = os.path.join(root, "object_tiles.txt")
-list_of_tiles_blank = os.path.join(root, "blank_tiles.txt")
+positive_tile_file = os.path.join(root, "positive_tiles.txt")
+negative_tile_file = os.path.join(root, "negative_tiles.txt")
 
 print("== Generate Masks from JSON ==")
 fns = utils.fileio.files_of_type(json_dir, "*.json")
@@ -27,4 +27,4 @@ print("== Generate Blank Masks ==")
 utils.generate_blank_mask_dir(img_dir, mask_dir)
 
 print("== Generate Blank/NonBlank Lists ==")
-utils.list_blank_tiles(img_dir, mask_dir, list_of_tiles_with_objects, list_of_tiles_blank)
+utils.list_blank_tiles(img_dir, mask_dir, positive_tile_file, list_of_tiles_blank)

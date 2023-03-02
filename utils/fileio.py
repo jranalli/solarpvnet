@@ -84,11 +84,26 @@ def files_of_type(search_dir, search_str, fullpath=True):
 
 
 def read_file_list(source_file, base_dir=None):
+    """
+    Read a list of strings from a file and return as a list.
+
+    Parameters
+    ----------
+    source_file: str
+        Full context of the file to read
+    base_dir: str
+        A root dir to append to each filename
+
+    Returns
+    -------
+    list of strings
+    """
     mylist = []
     with open(source_file, 'r') as f:
         for line in f.readlines():
             fix = line.replace("\n", "")
-            if base_dir is not None:
-                fix = os.path.join(base_dir, fix)
-            mylist.append(fix)
+            if fix != "":
+                if base_dir is not None:
+                    fix = os.path.join(base_dir, fix)
+                mylist.append(fix)
     return mylist

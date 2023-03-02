@@ -14,11 +14,11 @@ for root in roots:
     img_dir = os.path.join(root, "img")
     mask_dir = os.path.join(root, "mask")
 
-    list_of_tiles_with_objects = os.path.join(root, "object_tiles.txt")
-    list_of_tiles_blank = os.path.join(root, "blank_tiles.txt")
+    positive_tile_file = os.path.join(root, "positive_tiles.txt")
+    negative_tile_file = os.path.join(root, "negative_tiles.txt")
 
     print("== Generate Blank Mask ==")
     utils.generate_blank_mask_dir(img_dir, mask_dir)
 
     print("== Generate Blank/NonBlank Lists ==")
-    utils.list_blank_tiles(img_dir, mask_dir, list_of_tiles_with_objects, list_of_tiles_blank)
+    utils.list_blank_tiles(img_dir, mask_dir, positive_tile_file, negative_tile_file)

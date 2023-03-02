@@ -23,8 +23,8 @@ for root, split_size in zip(roots, split_sizes):
     tile_dir = os.path.join(root, "tiles", "img")
     mask_tile_dir = os.path.join(root, "tiles", "mask")
 
-    list_of_tiles_with_objects = os.path.join(root, "tiles", "object_tiles.txt")
-    list_of_tiles_blank = os.path.join(root, "tiles", "blank_tiles.txt")
+    positive_tile_file = os.path.join(root, "tiles", "positive_tiles.txt")
+    negative_tile_file = os.path.join(root, "tiles", "negative_tiles.txt")
 
     cal_json = os.path.join(data_dir, "3385780_alt", "SolarArrayPolygons.json")
     cal_csv = os.path.join(data_dir, "3385780_alt", "polygonDataExceptVertices.csv")
@@ -66,4 +66,4 @@ for root, split_size in zip(roots, split_sizes):
                     should_quiet=True)
 
     print("== Generate List of Blanks ==")
-    utils.list_blank_tiles(tile_dir, mask_tile_dir, list_of_tiles_with_objects, list_of_tiles_blank)
+    utils.list_blank_tiles(tile_dir, mask_tile_dir, positive_tile_file, negative_tile_file)

@@ -1,4 +1,5 @@
-from model.dataset_manipulation import test_train_valid_split, make_combo_dataset_txt
+import utils.fileio
+from model.dataset_manipulation import test_train_valid_split_list, make_combo_dataset_txt
 from model.train_model import train_unet
 from model.eval_model import eval_model
 
@@ -38,7 +39,7 @@ def run():
     # ## Train ##
     do_train_models = True
 
-    mybackbones = ["resnet34"]
+    mybackbones = ["resnet101"]
     mysize = 576
     epochs = 200
     patience = 10
@@ -57,7 +58,7 @@ def run():
 
     do_summary = True
     do_boundary_plots = False
-    do_multi_plots = False
+    do_multi_plots = True
     do_imagewise_metrics = True
 
     # #### END SETTINGS ####
@@ -96,6 +97,8 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
             - tiles: the root tile directory for the dataset.  e.g. d:/solardnn/NY-Q/tiles
             - img_root: the root image directory for dataset. e.g. d:/solardnn/NY-Q/tiles/img
             - mask_root: the root mask directory for dataset. e.g. d:/solardnn/NY-Q/tiles/mask
+            - negative_list: the text file containing the list of tiles that are blank. e.g. d:/solardnn/NY-Q/tiles/negative_tiles.txt
+            - positive_list: the text file containing the list of tiles with objects. e.g. d:/solardnn/NY-Q/tiles/positive_tiles.txt
             - model_out_root: directory where models should be saved. e.g. d:/solardnn/NY-Q/models
             - prediction_root: directory for predictions when the model is tested. e.g. d:/solardnn/NY-Q/predictions
         [seed]
@@ -162,6 +165,8 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
         paths[train_set] = {}
         siteroot = os.path.join(data_root_dir, train_set)
         tileroot = os.path.join(data_root_dir, train_set, "tiles")
+        negativelist = os.path.join(tileroot, "negative_tiles.txt")
+        positivelist = os.path.join(tileroot, "positive_tiles.txt")
         modeloutroot = os.path.join(siteroot, "models")
         predictionroot = os.path.join(siteroot, "predictions")
 
@@ -175,6 +180,8 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
         paths[train_set]['tiles'] = tileroot
         paths[train_set]['img_root'] = img_root
         paths[train_set]['mask_root'] = mask_root
+        paths[train_set]['negative_list'] = negativelist
+        paths[train_set]['positive_list'] = positivelist
         paths[train_set]['model_out_root'] = modeloutroot
         paths[train_set]['prediction_root'] = predictionroot
 
@@ -285,10 +292,10 @@ def build_datasets(paths, train_sets, seeds, n_set, test_train_valid, combo_sets
                 except KeyError:
                     print(f"combo_sets does not contain a specifier for {train_set}. Skipping...")
             else:
-                imdir = paths[train_set]['img_root']
-                maskdir = paths[train_set]['mask_root']
+                # Build datasets with positive examples only
                 tiledir = paths[train_set]['tiles']
-                test_train_valid_split(imdir, maskdir, tiledir, test_train_valid=test_train_valid, seed=seed, n_set=n_set)
+                positives = utils.fileio.read_file_list(paths[train_set]['positive_list'])
+                test_train_valid_split_list(positives, positives, tiledir, test_train_valid=test_train_valid, seed=seed, n_set=n_set)
 
 
 def train_models(paths, train_sets, seeds, backbones, model_revs, img_size, epochs, freeze_encoder, patience, batchnorm):

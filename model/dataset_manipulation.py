@@ -4,6 +4,7 @@ import shutil
 import numpy as np
 from PIL import Image
 
+import utils.fileio
 from utils.fileio import files_of_type, verify_dir, is_dir_empty, clear_dir
 
 
@@ -74,26 +75,22 @@ def reshape_and_save(img_list, out_dir, size=(576, 576)):
         im.save(os.path.join(out_dir, fn_short))
 
 
-def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
-                           exclude=None, test_train_valid=(0.2, 0.72, 0.08),
-                           seed=None, img_ext="png", overwrite=False):
+def test_train_valid_split_list(img_files, mask_files, output_root, n_set=None,
+                           test_train_valid=(0.2, 0.72, 0.08), seed=None, overwrite=False):
     """
-    Split out subsets of the
+    Split a list of image and mask filenames up into test_train_valid sets and save them
+    to separate files.
 
     Parameters
     ----------
-    img_dir: str
-        Full path to directory containing the images
-    mask_dir: str
-        Full path to directory containing masks (must match filenames in
-        image_dir.
+    img_files: list or tuple
+        List of file basenames for images
+    mask_files: list or tuple or None
+        List of file basenames for masks.
     output_root: str
         Root path to directory where files will be output. Directory names
         coming out will be: test_img_SEED, test_mask_SEED, train_img_SEED,
         train_mask_SEED
-    exclude: iterable[str] (default None)
-        Exclude any filenames in the list. Routine will search for file
-        basenames that appear in any way within exclude. Ignore if None.
     n_set: int (default 1000)
         Number of images in the total dataset. If None or 0, the whole list of
         images in the img_dir folder will be used.
@@ -101,8 +98,6 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
         Fractions of test, train and valid sets relative to n_set.
     seed: int (default None)
         The seed to use to initialize np.random.seed. If None, ignore.
-    img_ext: str (default "png")
-        The file extension of the images in the directory
     overwrite: bool (default False)
         Should files be overwritten in the target destinations?
 
@@ -111,6 +106,10 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
     Output files organized as a tuple as follows:
         (test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file)
     """
+    # Confirm that the lists are the same length
+    if not len(mask_files) == len(img_files):
+        raise ValueError("Image and Mask lists must be the same length.")
+
     # Make sure our output directories exist
     verify_dir(output_root)
     test_im_file = os.path.join(output_root, f"test_img_{seed}.txt")
@@ -120,7 +119,7 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
     valid_im_file = os.path.join(output_root, f"valid_img_{seed}.txt")
     valid_msk_file = os.path.join(output_root, f"valid_mask_{seed}.txt")
 
-    #
+    # Test for outputs already existing
     for i_file in [test_im_file, test_msk_file,
                    train_im_file, train_msk_file,
                    valid_im_file, valid_msk_file]:
@@ -138,72 +137,53 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
     if seed is not None:
         np.random.seed(seed)
 
-    # Get full set of image files
-    all_fn = files_of_type(img_dir, "*." + img_ext, fullpath=False)
-
-    # If exclude provided, pop them out of all_fn
-    if exclude is not None:
-        for fn in all_fn.copy():
-            # this handles full context pathnames in both. If speed is an issue
-            # refactor to require basenames only in exclude
-            if any(os.path.basename(fn) in fstr for fstr in exclude):
-                all_fn.remove(fn)
-
-    # Get the subset if requested to do so
-    if n_set is not None and n_set > 0:
-        all_fn = list(np.random.choice(all_fn, n_set, replace=False))
-    else:
-        n_set = len(all_fn)
+    # Downselect a subset by choosing indices
+    if n_set is None or n_set < 0:
+        n_set = len(img_files)
+    chosen_inds = list(np.random.choice(range(len(img_files)), n_set, replace=False))
+    chosen_inds.sort()
 
     # Calculate how many belong in each split
     ntest = int(test_train_valid[0] * n_set)
     ntrain = int(test_train_valid[1] * n_set)
     nvalid = int(test_train_valid[2] * n_set)
 
-    # Coerce to match n_split
+    # Coerce to match n_set if they don't
     if ntest + ntrain + nvalid != n_set:
         print("Set does not split evenly, biasing towards train.")
         ntrain = n_set - ntest - nvalid
 
-    # choose files to mark as test
-    all_fn_cp = all_fn.copy()
-    test = list(np.random.choice(all_fn_cp, ntest, replace=False))
+    # Choose indices to belong to each category.
+    # Remove extras from the list.
+    chosen_inds_cp = chosen_inds.copy()
+    test = list(np.random.choice(chosen_inds_cp, ntest, replace=False))
     for item in test:
-        all_fn_cp.remove(item)
+        chosen_inds_cp.remove(item)
     # Choose Train Files
-    train = list(np.random.choice(all_fn_cp, ntrain, replace=False))
+    train = list(np.random.choice(chosen_inds_cp, ntrain, replace=False))
     for item in train:
-        all_fn_cp.remove(item)
+        chosen_inds_cp.remove(item)
     # Valid remains
-    assert len(all_fn_cp) == nvalid
-    valid = all_fn_cp
-
-    # Get file extensions for each images and masks
-    img_extn = "." + img_ext  # this was easy
-    # Find the filename of the first test image excluding extension
-    first_im = os.path.splitext(os.path.basename(test[0]))[0]
-    # Get the corresponding mask file
-    mask_files = files_of_type(mask_dir, first_im + "*")
-    mask_extn = os.path.splitext(mask_files[0])[-1]
+    assert len(chosen_inds_cp) == nvalid
+    valid = chosen_inds_cp
 
 
-    all_fn.sort()
     with open(test_im_file, "w") as test_im, \
             open(test_msk_file, "w") as test_msk, \
             open(train_im_file, "w") as train_im, \
             open(train_msk_file, "w") as train_msk, \
             open(valid_im_file, "w") as valid_im, \
             open(valid_msk_file, "w") as valid_msk:
-        # Save files
-        for f in all_fn:
-            im_file = f
-            msk_file = f.replace(img_dir, mask_dir).replace(img_extn, mask_extn)
+
+        for ind in chosen_inds:
+            im_file = img_files[ind]
+            msk_file = mask_files[ind]
 
             # Store to file depending on name
-            if im_file in test:
+            if ind in test:
                 test_im.write(im_file+"\n")
                 test_msk.write(msk_file+"\n")
-            elif im_file in train:
+            elif ind in train:
                 train_im.write(im_file+"\n")
                 train_msk.write(msk_file+"\n")
             else:  # it's in valid
@@ -213,6 +193,48 @@ def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
     return test_im_file, test_msk_file, \
         train_im_file, train_msk_file, \
         valid_im_file, valid_msk_file
+
+
+def test_train_valid_split(img_dir, mask_dir, output_root, n_set=None,
+                           test_train_valid=(0.2, 0.72, 0.08),
+                           seed=None, img_ext="png", overwrite=False):
+    """
+    Split out subsets of the
+
+    Parameters
+    ----------
+    img_dir: str
+        Full path to directory containing the images
+    mask_dir: str
+        Full path to directory containing masks (must match filenames in
+        image_dir.
+    output_root: str
+        Root path to directory where files will be output. Directory names
+        coming out will be: test_img_SEED, test_mask_SEED, train_img_SEED,
+        train_mask_SEED
+    n_set: int (default 1000)
+        Number of images in the total dataset. If None or 0, the whole list of
+        images in the img_dir folder will be used.
+    test_train_valid: list[float] (default [0.2, 0.72, 0.08])
+        Fractions of test, train and valid sets relative to n_set.
+    seed: int (default None)
+        The seed to use to initialize np.random.seed. If None, ignore.
+    img_ext: str (default "png")
+        The file extension of the images in the directory
+    overwrite: bool (default False)
+        Should files be overwritten in the target destinations?
+
+    Returns
+    ----------
+    Output files organized as a tuple as follows:
+        (test_im_file, test_msk_file, train_im_file, train_msk_file, valid_im_file, valid_msk_file)
+    """
+
+    # Get full set of image files (basenames only)
+    img_fn = files_of_type(img_dir, "*." + img_ext, fullpath=False)
+    mask_fn = files_of_type(mask_dir, "*." + img_ext, fullpath=False)
+
+    return test_train_valid_split_list(img_fn, mask_fn, output_root, n_set, test_train_valid, seed, overwrite)
 
 
 def limit_dataset_size(img_dir, mask_dir, output_root, n_limit, seed,
@@ -346,12 +368,9 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
             root_paths.append("")
 
     all_lists = []
-    for fn in input_files:
-        with open(fn, 'r') as f:
-            data = f.read()
-            mylist = data.split("\n")
-            mylist.remove("")  # sometimes we get a blank line
-            all_lists.append(mylist)
+    for fn, root in zip(input_files, root_paths):
+        mylist = utils.fileio.read_file_list(fn, root)
+        all_lists.append(mylist)
 
     if weights is None:
         weights = np.ones_like(input_files, dtype=np.float32)/len(input_files)
@@ -360,17 +379,19 @@ def make_combo_dataset_txt(input_files, out_file, root_paths=None, weights=None,
     # Correct for rounding
     im_each[-1] = total_imgs - sum(im_each[:-1])
 
+    biglist = []
+    for set_fn, num in zip(all_lists, im_each):
+        if total_imgs is None:
+            subset = set_fn
+        else:
+            subset = list(np.random.choice(set_fn, num, replace=False))
+        biglist += subset
+
     endl = "\n"
     with open(out_file, "w") as outf:
-        for all_fn, num, root in zip(all_lists, im_each, root_paths):
-            if total_imgs is None:
-                subset = all_fn
-            else:
-                subset = list(np.random.choice(all_fn, num, replace=False))
-
-            for fn in subset:
-                outf.write(os.path.join(root, fn)+endl)
-
+        for fn in biglist:
+            # Concatenate subset together with endl in between and write
+            outf.write(fn+endl)
 
 
 def make_combo_dataset(data_paths, out_path, img_subpath="img", mask_subpath="mask", img_ext="png", weights=None, total_imgs=1000, seed=None):
