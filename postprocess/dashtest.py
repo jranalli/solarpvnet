@@ -5,6 +5,7 @@ import os
 
 from dash import Dash, dcc, html, Input, Output, no_update
 import plotly.graph_objects as go
+import plotly.express as px
 
 from PIL import Image
 
@@ -15,16 +16,15 @@ import pandas as pd
 
 # https://dash.plotly.com/dash-core-components/tooltip
 
-model = "CA-F"
 test = "NY-Q"
 
 data_path = rf"D:\data\solardnn\results\resnet34_42_1\{test}_test\resnet34_42_v1_{test}_imgmetrics.xlsx"
 img_path = rf"D:\data\solardnn\{test}\tiles\img"
 mask_path = rf"D:\data\solardnn\{test}\tiles\mask"
-pred_path = rf"D:\data\solardnn\{model}\predictions\{model}_resnet34_42_v1_predicting_{test}\pred_masks"
 
 
 
+color = {"CA-S": 0, "CA-F": 1, "FR-G": 2, "FR-I": 3, "DE-G": 4, "NY-Q": 5, "CMB-6": 6}
 
 def np_image_to_base64(im_path, msk_path, pre_path, im_name, alph=0.75):
     im = Image.open(os.path.join(im_path, im_name))
@@ -48,24 +48,41 @@ df = pd.read_excel(data_path, ["precision","recall"], header=0, index_col=0)
 p = df['precision']
 r = df['recall']
 
-fig = go.Figure(data=[
-    go.Scatter(
-        x=p[model],
-        y=r[model],
-        mode="markers",
-        marker=dict(
-            colorscale='viridis',
-            color=p[model],
-            opacity=0.8,
-        )
-    )
-])
+ps = np.array([])
+rs = np.array([])
+ims = []
+cs = []
+for key in color.keys():
+    ps = np.hstack([ps, p[key].values]) if ps.size else p[key].values
+    rs = np.hstack([rs, r[key].values]) if rs.size else r[key].values
+    ims.extend(list(p[key].index))
+    ci = [key]*len(p[key].values)
+    cs.extend(ci)
 
+bdf = pd.DataFrame({"precision": ps, "recall": rs, "color": cs}, index=ims)
+
+# fig = go.Figure(data=[
+#     go.Scatter(
+#         x=bdf['precision'],
+#         y=bdf['recall'],
+#         mode="markers",
+#         marker=dict(
+#             color=bdf['color'],
+#             opacity=0.8,
+#         )
+#     )
+# ])
+fig = px.scatter(
+        x=bdf['precision'],
+        y=bdf['recall'],
+        color=bdf['color'],
+        color_discrete_sequence=px.colors.qualitative.D3
+    )
 
 fig.update_layout(
-    title="Plot Title",
-    xaxis_title="XAxisTitle",
-    yaxis_title="YAxisTitle",
+    title=f"Predicting {test}",
+    xaxis_title="Precision",
+    yaxis_title="Recall",
     legend_title="Legend Title",
     font=dict(
         family="Courier New, monospace",
@@ -101,12 +118,20 @@ def display_hover(hoverData):
     # demo only shows the first point, but other points may also be available
     pt = hoverData["points"][0]
     bbox = pt["bbox"]
-    num = pt["pointNumber"]
+    num = pt["pointNumber"]+pt['curveNumber']*200
 
-    df_row = r.iloc[num]
+    df_row = bdf.iloc[num]
     img_src = df_row.name
+    mod = df_row['color']
+    pred_path = rf"D:\data\solardnn\{mod}\predictions\{mod}_resnet34_42_v1_predicting_{test}\pred_masks"
     img_dat = np_image_to_base64(img_path,mask_path, pred_path, img_src)
     children = [
+        html.Div([html.H1(f"{mod}"),
+                  html.H6(f"{num}"),
+                  html.H6(f"{df_row['precision']}"),
+                  html.H6(f"{df_row['recall']}"),
+                  html.H6(f"{img_src}")
+                  ]),
         html.Div([
             html.Img(src=img_dat, style={"width": "100%"}),
         ], style={'width': '400px', 'white-space': 'normal'})
