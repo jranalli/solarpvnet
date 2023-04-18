@@ -7,15 +7,16 @@ import os
 import shutil
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from PIL import Image
 
-from keras.preprocessing.image import ImageDataGenerator
-from sklearn.model_selection import train_test_split
-from keras.callbacks import ModelCheckpoint, CSVLogger
 from keras.optimizers import Adam, SGD
+from sklearn.metrics import precision_recall_curve
 
 import segmentation_models as sm
 
 from utils.fileio import read_file_list, verify_dir, is_dir_empty
+from utils.configuration import get_loop_iter
 
 
 def eval_model(test_img_dir, test_mask_dir, test_img_file, test_mask_file, weight_file, result_file, pred_dir,
@@ -127,43 +128,80 @@ def eval_model(test_img_dir, test_mask_dir, test_img_file, test_mask_file, weigh
 
     # Save plots and images
     print("==== Save Predictions ====")
-    figsize = 7
-    cols = 4
-    alpha = 0.5
 
     for im_id, imname in enumerate(images):
-        img_name = os.path.basename(imname)
-        plt.imsave(os.path.join(pred_dir, img_name), pred_imgs[im_id],
-                   cmap=plt.cm.gray)
-
-        if plot_dir is not None:
-            fig, axes = plt.subplots(1, cols,
-                                     figsize=(cols * figsize, figsize))
-            axes[0].set_title("original", fontsize=15)
-            axes[1].set_title("ground truth", fontsize=15)
-            axes[2].set_title("prediction", fontsize=15)
-            axes[3].set_title("overlay", fontsize=15)
-            axes[0].imshow(x[im_id], cmap=get_cmap(x))
-            axes[0].set_axis_off()
-            axes[1].imshow(y[im_id], cmap=get_cmap(y))
-            axes[1].set_axis_off()
-
-            axes[2].imshow(pred_imgs[im_id], cmap=get_cmap(pred_imgs))
-            axes[2].set_axis_off()
-            axes[3].imshow(x[im_id], cmap=get_cmap(x))
-            axes[3].imshow(mask_to_red(zero_pad_mask(pred_imgs[im_id],
-                                                     desired_size=img_size[0])),
-                           cmap=get_cmap(pred_imgs),
-                           alpha=alpha)
-            axes[3].set_axis_off()
-            fig.savefig(os.path.join(plot_dir, img_name))
-            plt.close(fig)
+        img_name = os.path.join(pred_dir, os.path.basename(imname))
+        Image.fromarray((255*pred_imgs[im_id]).astype(np.uint8), mode="L").save(img_name)
 
 
-def zero_pad_mask(mask, desired_size):
-    pad = (desired_size - mask.shape[0]) // 2
-    padded_mask = np.pad(mask, pad, mode="constant")
-    return padded_mask
+def pr_curve(truth_dir, truth_file, pred_dir, result_file, overwrite=False):
+    """
+    Generate a precision-recall curve for a given model
+
+    Parameters
+    ----------
+    truth_dir: str
+        Directory with truth mask images. Use None for test_img_file that contains full paths.
+    truth_file: str
+        Full context of file containing list of truth mask images
+    pred_dir: str
+        Full location of path to prediction probability images
+    result_file: str
+        Full location of file to save results to
+    overwrite: bool (default: False)
+        Should files be overwritten?
+    """
+
+    # Check if file exists
+    verify_dir(os.path.dirname(result_file))
+    if os.path.isfile(result_file):
+        if not overwrite:
+            print("Result file exists, skipping operation...")
+            return
+        else:
+            os.remove(result_file)
+
+    # Get the list of all input/output files
+    truth_files = read_file_list(truth_file, truth_dir)
+    pred_files = [name.replace(os.path.dirname(name), pred_dir) for name in truth_files]
+
+    # Load and reshape the data
+    X_list = []
+    Y_list = []
+    for image, mask in get_loop_iter(zip(truth_files, pred_files)):
+        im_Y = Image.open(mask).convert("L")  # Convert to grayscale
+        Y_list.append(np.array(im_Y))
+        size = im_Y.size
+        im_Y.close()
+
+        im_X = Image.open(image).convert("L")  # Convert to grayscale
+        im_X = im_X.resize(size)
+        X_list.append(np.array(im_X))
+        im_X.close()
+
+    x = np.asarray(X_list, dtype=np.float32)
+    y = np.asarray(Y_list, dtype=np.float32)
+
+    # Normalize
+    x /= np.max(x)
+    y /= np.max(y)
+
+    # Compute the curves, binarizing x
+    p, r, _ = precision_recall_curve(x.flatten() > 0, y.flatten())
+
+    # Write to a file
+    df = pd.DataFrame({"precision": p, "recall": r})
+    df.to_csv(result_file, index=False)
+
+    # # plot the precision-recall curves
+    # plt.plot(r, p, marker='.')
+    # # axis labels
+    # plt.xlabel('Recall')
+    # plt.ylabel('Precision')
+    # # show the legend
+    # plt.legend()
+    # # show the plot
+    # plt.show()
 
 
 def reshape_arr(arr):
@@ -174,29 +212,6 @@ def reshape_arr(arr):
             return arr
         elif arr.shape[3] == 1:
             return arr.reshape(arr.shape[0], arr.shape[1], arr.shape[2])
-
-
-def get_cmap(arr):
-    if arr.ndim == 3:
-        return 'gray'
-    elif arr.ndim == 4:
-        if arr.shape[3] == 3:
-            return 'jet'
-        elif arr.shape[3] == 1:
-            return 'gray'
-
-
-def mask_to_red(mask):
-    """
-    Converts binary segmentation mask from white to red color.
-    Also adds alpha channel to make black background transparent.
-    """
-    img_size = mask.shape[0]
-    c1 = mask.reshape(img_size, img_size)
-    c2 = np.zeros((img_size, img_size))
-    c3 = np.zeros((img_size, img_size))
-    c4 = mask.reshape(img_size, img_size)
-    return np.stack((c1, c2, c3, c4), axis=-1)
 
 
 if __name__ == '__main__':

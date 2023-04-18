@@ -71,8 +71,10 @@ def compute_imagewise_metrics(truth_file, prediction_file, threshold=0.5):
         return iou, precision, recall, f1
     """
     # Load images
-    with Image.open(prediction_file) as i2:
-        pt = np.array(i2)[:, :, 0]  # Predictions are RGB for some reason
+    with Image.open(prediction_file).convert("L") as i2:
+        pt = np.array(i2)
+        if len(pt.shape) > 2:
+            pt = pt[:,:,0]  # Predictions are RGB for some reason
         pt = pt/np.max(pt)  # normalize
     with Image.open(truth_file) as i1:
         gt = np.array(i1.resize(pt.shape))  # Reshape to match prediction

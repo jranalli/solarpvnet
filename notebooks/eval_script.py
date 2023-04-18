@@ -1,9 +1,9 @@
 import utils.fileio
 from model.dataset_manipulation import test_train_valid_split_list, make_combo_dataset_txt
 from model.train_model import train_unet
-from model.eval_model import eval_model
+from model.eval_model import eval_model, pr_curve
 
-from postprocess.images_to_plots import multimodel_plot, model_boundary_plot
+from postprocess.images_to_plots import multimodel_plot, model_boundary_plot, single_case_plot
 from postprocess.summarize_results import generate_run_summary
 from postprocess.imagewise_metrics import aggregate_imagewise_metrics
 import os
@@ -39,7 +39,7 @@ def run():
     # ## Train ##
     do_train_models = True
 
-    mybackbones = ["resnet101"]
+    mybackbones = ["resnet50", "resnet101"]
     mysize = 576
     epochs = 200
     patience = 10
@@ -49,14 +49,13 @@ def run():
 
     # ## Test ##
     do_test_models = True
-
-    do_plots = False
     test_weights = 'best'
 
     # ## Post ##
     do_post = True
 
     do_summary = True
+    do_single_plots = False
     do_boundary_plots = False
     do_multi_plots = True
     do_imagewise_metrics = True
@@ -80,11 +79,11 @@ def run():
 
     if do_test_models:
         print("\n\n===== TESTING =====\n\n")
-        eval_models(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, mysize, norm, test_weights, do_plots)
+        eval_models(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, mysize, norm, test_weights)
 
     if do_post:
         print("\n\n===== POST =====\n\n")
-        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_boundary_plots, do_multi_plots, do_imagewise_metrics)
+        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_single_plots, do_boundary_plots, do_multi_plots, do_imagewise_metrics)
 
 
 def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, test_sets):
@@ -217,6 +216,7 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
                         paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir'] = os.path.join(test_result_subdir, "pred_masks")
                         paths[train_set][seed][backbone][model_rev][test_set]['plot_dir'] = os.path.join(test_result_subdir, "plots")
                         paths[train_set][seed][backbone][model_rev][test_set]['result_file'] = os.path.join(test_result_subdir, f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}_data.csv")
+                        paths[train_set][seed][backbone][model_rev][test_set]['prcurve_file'] = os.path.join(test_result_subdir, f"{train_set}_{backbone}_{seed}_v{model_rev}_predicting_{test_set}_prcurve.csv")
 
                         boundary_plot_dir = os.path.join(global_result_root_dir, rf"{test_set}_test", "boundary_plot")
                         multi_plot_dir = os.path.join(global_result_root_dir, rf"{test_set}_test", "multi_plot")
@@ -351,7 +351,7 @@ def train_models(paths, train_sets, seeds, backbones, model_revs, img_size, epoc
                     gc.collect()
 
 
-def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_size, batchnorm, weight_type, gen_plots=False):
+def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_size, batchnorm, weight_type):
     """
     Wrapper to help perform the model evaluation for a large set of models
 
@@ -378,8 +378,6 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
         Should batch normalization be used?
     weight_type: str
         One of 'best' or 'final'. Which weights file should be read for the trained model.
-    gen_plots: bool (default False)
-        Should plots be generated?
     """
     for train_set in train_sets:
         for seed in seeds:
@@ -405,19 +403,17 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
 
                         pred_dir = paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir']
                         res_file = paths[train_set][seed][backbone][model_rev][test_set]['result_file']
+                        prcurve_file = paths[train_set][seed][backbone][model_rev][test_set]['prcurve_file']
 
-                        if gen_plots:
-                            plot_dir = paths[train_set][seed][backbone][model_rev][test_set]['plot_dir']
-                        else:
-                            plot_dir = None
-
-                        eval_model(imdir, maskdir, tst_im_f, tst_m_f, wgt_file, res_file, pred_dir, plot_dir,
+                        eval_model(imdir, maskdir, tst_im_f, tst_m_f, wgt_file, res_file, pred_dir,
                                    backbone=backbone, img_size=(img_size, img_size), batchnorm=batchnorm)
+
+                        pr_curve(maskdir, tst_m_f, pred_dir, prcurve_file)
 
                         gc.collect()
 
 
-def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False):
+def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_single_plots=False, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False):
     """
         Wrapper to help perform the postprocessing for a large set of models
 
@@ -440,6 +436,8 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
             e.g. ['CA-F','NY-Q']
         gen_summary: bool (default True)
             Should global summary file be generated?
+        gen_single_plots: bool (default False)
+            Should single case boundary plots be generated?
         gen_boundary_plots: bool (default False)
             Should global boundary comparison plots be generated?
         gen_multi_plots: bool (default False)
@@ -473,7 +471,16 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
                     # Build a list of the prediction directories for all the training sets (this is an input)
                     pred_dirs = []
                     for train_set in train_sets:
-                        pred_dirs.append(paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir'])
+                        pred_dir = paths[train_set][seed][backbone][model_rev][test_set]['prediction_dir']
+                        pred_dirs.append(pred_dir)
+
+                        if gen_single_plots:  # These occur at both the training and test set level
+                            tst_im_f = paths[test_set][seed]['test_im']
+                            tst_m_f = paths[test_set][seed]['test_mask']
+                            imdir = paths[test_set]['img_root']
+                            maskdir = paths[test_set]['mask_root']
+                            plot_dir = paths[train_set][seed][backbone][model_rev][test_set]['plot_dir']
+                            single_case_plot(imdir, maskdir, tst_im_f, tst_m_f, pred_dir, plot_dir)
 
                     # Generate the plots
                     if gen_boundary_plots:

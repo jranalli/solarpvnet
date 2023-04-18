@@ -1,14 +1,99 @@
 import glob
 import os
+import shutil
 
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import numpy as np
 from PIL import Image, ImageFilter, ImageColor
 
-from utils.fileio import verify_dir
+from utils.fileio import verify_dir, is_dir_empty, read_file_list
+from utils.configuration import get_loop_iter
 
-import importlib.util
+
+def single_case_plot(test_img_dir, test_mask_dir, test_img_file, test_mask_file, pred_dir,
+                     plot_dir, overwrite=False):
+    """
+    Perform the evaluation of the model
+
+    Parameters
+    ----------
+    test_img_dir: str
+        Directory with test images to predict. Use None for test_img_file that contains full paths.
+    test_mask_dir: str
+        Directory with test masks. Use None for test_img_file that contains full paths.
+    test_img_file: str
+        Full context of file containing list of train images
+    test_mask_file: str
+        Full context of file containing list of train mask images
+    pred_dir: str
+        Full location of path to prediction images
+    plot_dir: str
+        Full location of path to save plot images
+    overwrite: bool (default: False)
+        Should files be overwritten?
+    """
+
+    # test and create directories
+    verify_dir(plot_dir)
+    if not is_dir_empty(plot_dir):
+        if not overwrite:
+            print("Plot directory is not empty, skipping operation...")
+            return
+        else:
+            shutil.rmtree(plot_dir)
+            verify_dir(plot_dir)
+
+    # Get the list of all input/output files
+    images = read_file_list(test_img_file, test_img_dir)
+    masks = read_file_list(test_mask_file, test_mask_dir)
+
+    # Save plots and images
+    figsize = 7
+    dpi = 300
+    cols = 4
+    bkg_alpha = 0.5
+    fg_alpha = 0.5
+    thresh = 50/255.0
+    overlay_color = "#ff0000"
+
+    for imname, maskname in get_loop_iter(zip(images, masks)):
+        img_name = os.path.basename(imname)
+
+        img_im = Image.open(imname)
+        truth_im = Image.open(maskname).convert("L")
+        pred_im = Image.open(os.path.join(pred_dir, img_name)).convert("L")
+
+        img_size = pred_im.size
+
+        img_dat = np.asarray(img_im.resize(img_size))
+        truth_dat = np.asarray(truth_im.resize(img_size))
+        pred_dat = np.asarray(pred_im)
+        pred_dat = pred_dat / np.max(pred_dat)
+
+        img_im.close()
+        truth_im.close()
+        pred_im.close()
+
+        fig, axes = plt.subplots(1, cols,
+                                 figsize=(cols * figsize, figsize))
+        axes[0].set_title("original", fontsize=15)
+        axes[1].set_title("ground truth", fontsize=15)
+        axes[2].set_title("prediction", fontsize=15)
+        axes[3].set_title("overlay", fontsize=15)
+        axes[0].imshow(img_dat)
+        axes[0].set_axis_off()
+        axes[1].imshow(truth_dat, cmap="gray")
+        axes[1].set_axis_off()
+
+        axes[2].imshow(pred_dat, cmap="gray")
+        axes[2].set_axis_off()
+        axes[3].imshow(img_dat, alpha=bkg_alpha)
+        axes[3].imshow(bkg_to_alpha(mask_colorize(pred_dat>thresh, overlay_color)), alpha=fg_alpha)
+        axes[3].set_axis_off()
+
+        fig.savefig(os.path.join(plot_dir, img_name), dpi=dpi)
+        plt.close(fig)
 
 
 def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], colors=["#0000ff", "#000088", "#00ff00", "#008800", "#ff00ff", "#ff8800", "#aaaa00"], overwrite=False):
@@ -20,15 +105,8 @@ def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=
     figsize = 4
     cols = 3
 
-    if importlib.util.find_spec("tqdm"):
-        from tqdm import tqdm
-        looper = tqdm(imgs)
-    else:
-        looper = imgs
 
-    for i, img in enumerate(looper):
-        if verbose and not importlib.util.find_spec("tqdm"):
-            print(f"{i}/{len(imgs)}")
+    for i, img in enumerate(get_loop_iter(imgs)):
 
         if os.path.exists(os.path.join(out_dir, img)) and not overwrite:
             print(f"File: {img} exists. Skip.")
@@ -102,15 +180,7 @@ def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True
     figsize = 7
     cols = len(titles)
 
-    if importlib.util.find_spec("tqdm"):
-        from tqdm import tqdm
-        looper = tqdm(imgs)
-    else:
-        looper = imgs
-
-    for img in looper:
-        if verbose and not importlib.util.find_spec("tqdm"):
-            print(f"{i}/{len(imgs)}")
+    for img in get_loop_iter(imgs):
 
         if os.path.exists(os.path.join(out_dir, img)) and not overwrite:
             print(f"File: {img} exists. Skip.")
@@ -158,7 +228,10 @@ def mask_colorize(mask, color=[255, 0, 0]):
     if isinstance(mask, Image.Image):
         arr = np.asarray(mask.convert("RGB"))
     else:
-        arr = mask
+        if len(mask.shape) == 2:
+            arr = np.stack((mask, mask, mask), axis=-1)
+        else:
+            arr = mask
 
     if isinstance(color, str):
         color = ImageColor.getrgb(color)
@@ -168,6 +241,7 @@ def mask_colorize(mask, color=[255, 0, 0]):
         return Image.fromarray(arr)
     else:
         return arr
+
 
 def bkg_to_alpha(mask, thresh=0, bkgalpha=0):
     if isinstance(mask, Image.Image):
@@ -184,6 +258,7 @@ def bkg_to_alpha(mask, thresh=0, bkgalpha=0):
         return Image.fromarray(arr)
     else:
         return arr
+
 
 def binarize(image, thresh=0):
     image = image.point(lambda p: 255 if p > thresh else 0)
