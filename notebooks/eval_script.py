@@ -33,19 +33,19 @@ def run():
     do_build_datasets = True
 
     splits = [0.2, 0.72, 0.08]  # Test, Train, Valid
-    myseeds = [42]
+    myseeds = [42, 2023]
     n_set = 1000
 
     # ## Train ##
     do_train_models = True
 
-    mybackbones = ["resnet50", "resnet101"]
+    mybackbones = ["resnet34"]
     mysize = 576
     epochs = 200
     patience = 10
     norm = True
     freeze = True
-    model_revs = ["1"]
+    model_revs = ["1", "2"]
 
     # ## Test ##
     do_test_models = True
@@ -56,8 +56,8 @@ def run():
 
     do_summary = True
     do_single_plots = False
-    do_boundary_plots = False
-    do_multi_plots = True
+    do_boundary_plots = True
+    do_multi_plots = False
     do_imagewise_metrics = True
 
     # #### END SETTINGS ####
