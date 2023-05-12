@@ -4,19 +4,17 @@ import base64
 import os
 
 from dash import Dash, dcc, html, Input, Output, no_update, callback_context
-import plotly.graph_objects as go
 import plotly.express as px
 
 from PIL import Image
 
-from sklearn.manifold import TSNE
 import numpy as np
 import pandas as pd
 
 
 # https://dash.plotly.com/dash-core-components/tooltip
 
-test = "NY-Q"
+test = "CA-F"
 
 data_path = rf"D:\data\solardnn\results\resnet34_42_1\{test}_test\resnet34_42_v1_{test}_imgmetrics.xlsx"
 img_path = rf"D:\data\solardnn\{test}\tiles\img"
