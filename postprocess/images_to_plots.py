@@ -3,6 +3,7 @@ import os
 import shutil
 
 import matplotlib.pyplot as plt
+from matplotlib import rc as mplrc
 from matplotlib.lines import Line2D
 import numpy as np
 from PIL import Image, ImageFilter, ImageColor
@@ -160,60 +161,66 @@ def model_boundary_plot(im_dir, truth_dir, pred_dirs, out_dir, dpi=300, verbose=
         plt.close(fig)
 
 
-
-
-
-
-def multimodel_plot(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], overwrite=False):
+def multimodel_plot(im_fn, im_dir, truth_dir, pred_dirs, out_fn, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], overwrite=False):
+    font = {
+        'family': 'sans-serif',
+        'size': 10
+    }
+    plt.rc('font', **font)
 
     bkg_alpha = 0.5
     fg_alpha = 0.5
     overlay_color = "#ff0000"
 
+    titles = ['Raw', 'Truth']
+    [titles.append(mdl) for mdl in model_names]
+
+    figsize = 1.5
+    cols = len(titles)
+
+    if os.path.exists(out_fn) and not overwrite:
+        print(f"File: {out_fn} exists. Skip.")
+        return
+
+    # fig, axes = plt.subplots(1, cols, figsize=(cols * figsize, figsize))
+    fig, axes = plt.subplots(1, cols, figsize=(10, figsize))
+    for axis, title in zip(axes, titles):
+        axis.set_axis_off()
+        axis.set_title(title)
+
+    img_dat = Image.open(os.path.join(im_dir, im_fn))
+    truth_dat = Image.open(os.path.join(truth_dir, im_fn))
+
+    axes[0].imshow(img_dat)
+    axes[1].imshow(img_dat, alpha=bkg_alpha)
+    axes[1].imshow(bkg_to_alpha(mask_colorize(truth_dat, overlay_color)), alpha=fg_alpha)
+
+    for i, pred_dir in enumerate(pred_dirs):
+        msk_im = Image.open(os.path.join(pred_dir, im_fn))
+        msk = msk_im.resize(img_dat.size)
+        msk_im.close()
+
+        # Binarize, colorize and remove bkg
+        msk = binarize(msk, 50)
+        msk = bkg_to_alpha(mask_colorize(msk, color=overlay_color))
+
+        axes[i+2].imshow(img_dat, alpha=bkg_alpha)
+        axes[i+2].imshow(msk, alpha=fg_alpha)
+
+    verify_dir(os.path.dirname(out_fn))
+    plt.tight_layout()
+    fig.savefig(out_fn, dpi=dpi)
+    plt.close(fig)
+
+
+def multimodel_plots(im_src, truth_dir, pred_dirs, out_dir, dpi=300, verbose=True, model_names=["CA-F", "CA-S", "FR-I", "FR-G", "DE-G", "NY-Q", "COMB"], overwrite=False):
+
     # Get the filenames from one of the predictions
     img_paths = glob.glob(os.path.join(pred_dirs[0], "*.png"))
     imgs = [os.path.basename(img_path) for img_path in img_paths]
 
-    titles = ['img', 'truth']
-    [titles.append(mdl) for mdl in model_names]
-
-    figsize = 7
-    cols = len(titles)
-
     for img in get_loop_iter(imgs):
-
-        if os.path.exists(os.path.join(out_dir, img)) and not overwrite:
-            print(f"File: {img} exists. Skip.")
-            continue
-
-        fig, axes = plt.subplots(1, cols, figsize=(cols * figsize, figsize))
-        for axis, title in zip(axes, titles):
-            axis.set_axis_off()
-            axis.set_title(title, fontsize=15)
-
-        img_dat = Image.open(os.path.join(im_src, img))
-        truth_dat = Image.open(os.path.join(truth_dir, img))
-
-        axes[0].imshow(img_dat)
-        axes[1].imshow(img_dat, alpha=bkg_alpha)
-        axes[1].imshow(bkg_to_alpha(mask_colorize(truth_dat, overlay_color)), alpha=fg_alpha)
-
-        for i, pred_dir in enumerate(pred_dirs):
-            msk_im = Image.open(os.path.join(pred_dir, img))
-            msk = msk_im.resize(img_dat.size)
-            msk_im.close()
-
-            # Binarize, colorize and remove bkg
-            msk = binarize(msk, 50)
-            msk = bkg_to_alpha(
-                mask_colorize(msk, color=overlay_color))
-
-            axes[i+2].imshow(img_dat, alpha=bkg_alpha)
-            axes[i+2].imshow(msk, alpha=fg_alpha)
-
-        verify_dir(out_dir)
-        fig.savefig(os.path.join(out_dir, img), dpi=dpi)
-        plt.close(fig)
+        multimodel_plot(img, im_src, truth_dir, pred_dirs, os.path.join(out_dir, img), dpi, verbose, model_names, overwrite)
 
 
 def mask_to_boundary(mask, size=3, color=[255, 255, 255]):
@@ -296,4 +303,4 @@ if __name__ == "__main__":
             outdir = os.path.join(data_root, fr"results\{backbone}_{seed}_{model_ver}\test_{test_site}\multi")
 
             print(f"\n=={test_site} COMBO==")
-            multimodel_plot(test_img_path, test_mask_path, pred_dirs, outdir, model_names=model_names)
+            multimodel_plots(test_img_path, test_mask_path, pred_dirs, outdir, model_names=model_names)

@@ -3,7 +3,7 @@ from model.dataset_manipulation import test_train_valid_split_list, make_combo_d
 from model.train_model import train_unet
 from model.eval_model import eval_model, pr_curve
 
-from postprocess.images_to_plots import multimodel_plot, model_boundary_plot, single_case_plot
+from postprocess.images_to_plots import multimodel_plots, model_boundary_plot, single_case_plot
 from postprocess.summarize_results import generate_run_summary
 from postprocess.imagewise_metrics import aggregate_imagewise_metrics
 import os
@@ -495,7 +495,7 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
                         multidir = paths[test_set][seed][backbone][model_rev][test_set]['multi_plot_root']
 
                         print(f"\n=={test_set} COMBO==")
-                        multimodel_plot(test_img_path, test_mask_path, pred_dirs, multidir, model_names=train_sets)
+                        multimodel_plots(test_img_path, test_mask_path, pred_dirs, multidir, model_names=train_sets)
 
                     # Run the metrics
                     if gen_imagewise_metrics:
