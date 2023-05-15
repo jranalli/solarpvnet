@@ -39,6 +39,8 @@ def choose_images(test, n=10, model_choice='global', choose_by="iou_score"):
     avg_df = avg_df.sort_values(by=choose_by)
     worst = avg_df.index[:n].values.tolist()
     best = avg_df.index[-n:].values.tolist()
+    worst.reverse()
+    best.reverse()
     return worst, best
 
 
@@ -98,7 +100,9 @@ def build_app():
                 "Choose Metric",
                 dcc.Dropdown(typenames, typenames[0],  className='col-4', id='typedropdown', style={"width": "150px"}, clearable=False),
                 "Choose Model",
-                dcc.Dropdown(model_options, model_options[0], className='col-4', id='modeldropdown', style={"width": "150px"},  clearable=False)
+                dcc.Dropdown(model_options, model_options[0], className='col-4', id='modeldropdown', style={"width": "150px"},  clearable=False),
+                "Number of Imgs",
+                dcc.Input(id="numimgs", type="number", value=12, min=1, max=100, step=1, className='col-4', style={"width": "150px"}, debounce=True),
             ]
         ),
         html.Div(
@@ -136,10 +140,11 @@ def build_app():
         Output("figworstrow", "children"),
         Input("testdropdown", "value"),
         Input("typedropdown", "value"),
-        Input("modeldropdown", "value")
+        Input("modeldropdown", "value"),
+        Input("numimgs", "value"),
     )
-    def callback(testvalue, typevalue, modelvalue):
-        worst, best = choose_images(testvalue, n=12, model_choice=modelvalue, choose_by=typevalue)
+    def callback(testvalue, typevalue, modelvalue, numvalue):
+        worst, best = choose_images(testvalue, n=numvalue, model_choice=modelvalue, choose_by=typevalue)
         bestfigs = [imagefig(testvalue, modelvalue, name) for name in best]
         worstfigs = [imagefig(testvalue, modelvalue, name) for name in worst]
 
