@@ -27,4 +27,4 @@ print("== Generate Blank Masks ==")
 utils.generate_blank_mask_dir(img_dir, mask_dir)
 
 print("== Generate Blank/NonBlank Lists ==")
-utils.list_blank_tiles(img_dir, mask_dir, positive_tile_file, list_of_tiles_blank)
+utils.list_blank_tiles(img_dir, mask_dir, positive_tile_file, negative_tile_file)
