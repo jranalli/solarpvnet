@@ -18,7 +18,14 @@ def run():
     dataroot = os.path.join("d:", "data", 'solardnn')
 
     test_sets = ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"]
-    train_sets = test_sets + ["CMB-6", "CMB-5-CA-F", "CMB-5-CA-S", "CMB-5-FR-G", "CMB-5-FR-I", "CMB-5-DE-G", "CMB-5-NY-Q"]
+    train_sets = test_sets + ["CMB-6",
+                              "CMB-5-CA-F", "CMB-5-CA-S", "CMB-5-FR-G", "CMB-5-FR-I", "CMB-5-DE-G", "CMB-5-NY-Q",
+                              "CMB-2-NYQ-CAF", "CMB-2-NYQ-CAS", "CMB-2-NYQ-FRG", "CMB-2-NYQ-FRI", "CMB-2-NYQ-DEG",
+                              "CMB-2-CAF-CAS", "CMB-2-CAF-FRG", "CMB-2-CAF-FRI", "CMB-2-CAF-DEG", "CMB-2-CAF-NYQ",
+                              "CMB-2-CAS-CAF", "CMB-2-CAS-FRG", "CMB-2-CAS-FRI", "CMB-2-CAS-DEG", "CMB-2-CAS-NYQ"
+                              "CMB-2-FRG-CAF", "CMB-2-FRG-CAS", "CMB-2-FRG-FRI", "CMB-2-FRG-DEG", "CMB-2-FRG-NYQ",
+                              "CMB-2-FRI-CAF", "CMB-2-FRI-CAS", "CMB-2-FRI-FRG", "CMB-2-FRI-DEG", "CMB-2-FRI-NYQ",
+                              "CMB-2-DEG-CAF", "CMB-2-DEG-CAS", "CMB-2-DEG-FRG", "CMB-2-DEG-FRI", "CMB-2-DEG-NYQ",]
     
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
                   "CMB-5-CA-F": ["CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],  # Excludes CA-F
@@ -27,6 +34,42 @@ def run():
                   "CMB-5-FR-I": ["CA-F", "CA-S", "FR-G", "DE-G", "NY-Q"],  # Excludes FR-I
                   "CMB-5-DE-G": ["CA-F", "CA-S", "FR-G", "FR-I", "NY-Q"],  # Excludes DE-G
                   "CMB-5-NY-Q": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G"],  # Excludes NY-Q
+
+                  "CMB-2-NYQ-CAF": ["NY-Q", "CA-F"],
+                  "CMB-2-NYQ-CAS": ["NY-Q", "CA-S"],
+                  "CMB-2-NYQ-FRG": ["NY-Q", "FR-G"],
+                  "CMB-2-NYQ-FRI": ["NY-Q", "FR-I"],
+                  "CMB-2-NYQ-DEG": ["NY-Q", "DE-G"],
+
+                  "CMB-2-CAF-CAS": ["CA-F", "CA-S"],
+                  "CMB-2-CAF-FRG": ["CA-F", "FR-G"],
+                  "CMB-2-CAF-FRI": ["CA-F", "FR-I"],
+                  "CMB-2-CAF-DEG": ["CA-F", "DE-G"],
+                  "CMB-2-CAF-NYQ": ["CA-F", "NY-Q"],
+
+                  "CMB-2-CAS-CAF": ["CA-S", "CA-F"],
+                  "CMB-2-CAS-FRG": ["CA-S", "FR-G"],
+                  "CMB-2-CAS-FRI": ["CA-S", "FR-I"],
+                  "CMB-2-CAS-DEG": ["CA-S", "DE-G"],
+                  "CMB-2-CAS-NYQ": ["CA-S", "NY-Q"],
+
+                  "CMB-2-FRG-CAF": ["FR-G", "CA-F"],
+                  "CMB-2-FRG-CAS": ["FR-G", "CA-S"],
+                  "CMB-2-FRG-FRI": ["FR-G", "FR-I"],
+                  "CMB-2-FRG-DEG": ["FR-G", "DE-G"],
+                  "CMB-2-FRG-NYQ": ["FR-G", "NY-Q"],
+
+                  "CMB-2-FRI-CAF": ["FR-I", "CA-F"],
+                  "CMB-2-FRI-CAS": ["FR-I", "CA-S"],
+                  "CMB-2-FRI-FRG": ["FR-I", "FR-G"],
+                  "CMB-2-FRI-DEG": ["FR-I", "DE-G"],
+                  "CMB-2-FRI-NYQ": ["FR-I", "NY-Q"],
+
+                  "CMB-2-DEG-CAF": ["DE-G", "CA-F"],
+                  "CMB-2-DEG-CAS": ["DE-G", "CA-S"],
+                  "CMB-2-DEG-FRG": ["DE-G", "FR-G"],
+                  "CMB-2-DEG-FRI": ["DE-G", "FR-I"],
+                  "CMB-2-DEG-NYQ": ["DE-G", "NY-Q"],
                   }
 
     # ## Dataset ##
@@ -56,8 +99,8 @@ def run():
 
     do_summary = True
     do_single_plots = False
-    do_boundary_plots = True
-    do_multi_plots = False
+    do_boundary_plots = False
+    do_multi_plots = True
     do_imagewise_metrics = True
 
     # #### END SETTINGS ####
