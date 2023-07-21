@@ -25,7 +25,10 @@ def run():
                               "CMB-2-CAS-CAF", "CMB-2-CAS-FRG", "CMB-2-CAS-FRI", "CMB-2-CAS-DEG", "CMB-2-CAS-NYQ",
                               "CMB-2-FRG-CAF", "CMB-2-FRG-CAS", "CMB-2-FRG-FRI", "CMB-2-FRG-DEG", "CMB-2-FRG-NYQ",
                               "CMB-2-FRI-CAF", "CMB-2-FRI-CAS", "CMB-2-FRI-FRG", "CMB-2-FRI-DEG", "CMB-2-FRI-NYQ",
-                              "CMB-2-DEG-CAF", "CMB-2-DEG-CAS", "CMB-2-DEG-FRG", "CMB-2-DEG-FRI", "CMB-2-DEG-NYQ",]
+                              "CMB-2-DEG-CAF", "CMB-2-DEG-CAS", "CMB-2-DEG-FRG", "CMB-2-DEG-FRI", "CMB-2-DEG-NYQ",
+                              "CMB-3-NYQ-CAF-CAS", "CMB-3-NYQ-CAF-FRG", "CMB-3-NYQ-CAF-FRI", "CMB-3-NYQ-CAF-DEG", "CMB-3-NYQ-CAS-FRG", "CMB-3-NYQ-CAS-FRI", "CMB-3-NYQ-CAS-DEG", "CMB-3-NYQ-FRG-FRI", "CMB-3-NYQ-FRG-DEG", "CMB-3-NYQ-FRI-DEG",
+                              "CMB-4-NYQ-CAF-CAS-FRG", "CMB-4-NYQ-CAF-CAS-FRI", "CMB-4-NYQ-CAF-CAS-DEG", "CMB-4-NYQ-CAF-FRG-FRI", "CMB-4-NYQ-CAF-FRG-DEG", "CMB-4-NYQ-CAF-FRI-DEG", "CMB-4-NYQ-CAS-FRG-FRI", "CMB-4-NYQ-CAS-FRG-DEG", "CMB-4-NYQ-CAS-FRI-DEG", "CMB-4-NYQ-FRG-FRI-DEG",
+                              ]
     
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
                   "CMB-5-CA-F": ["CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],  # Excludes CA-F
@@ -70,6 +73,30 @@ def run():
                   "CMB-2-DEG-FRG": ["DE-G", "FR-G"],
                   "CMB-2-DEG-FRI": ["DE-G", "FR-I"],
                   "CMB-2-DEG-NYQ": ["DE-G", "NY-Q"],
+
+                  "CMB-3-NYQ-CAF-CAS": ["NY-Q", "CA-F", "CA-S"],
+                  "CMB-3-NYQ-CAF-FRG": ["NY-Q", "CA-F", "FR-G"],
+                  "CMB-3-NYQ-CAF-FRI": ["NY-Q", "CA-F", "FR-I"],
+                  "CMB-3-NYQ-CAF-DEG": ["NY-Q", "CA-F", "DE-G"],
+                  "CMB-3-NYQ-CAS-FRG": ["NY-Q", "CA-S", "FR-G"],
+                  "CMB-3-NYQ-CAS-FRI": ["NY-Q", "CA-S", "FR-I"],
+                  "CMB-3-NYQ-CAS-DEG": ["NY-Q", "CA-S", "DE-G"],
+                  "CMB-3-NYQ-FRG-FRI": ["NY-Q", "FR-G", "FR-I"],
+                  "CMB-3-NYQ-FRG-DEG": ["NY-Q", "FR-G", "DE-G"],
+                  "CMB-3-NYQ-FRI-DEG": ["NY-Q", "FR-I", "DE-G"],
+
+                  "CMB-4-NYQ-CAF-CAS-FRG": ["NY-Q", "CA-F", "CA-S", "FR-G"],
+                  "CMB-4-NYQ-CAF-CAS-FRI": ["NY-Q", "CA-F", "CA-S", "FR-I"],
+                  "CMB-4-NYQ-CAF-CAS-DEG": ["NY-Q", "CA-F", "CA-S", "DE-G"],
+                  "CMB-4-NYQ-CAF-FRG-FRI": ["NY-Q", "CA-F", "FR-G", "FR-I"],
+                  "CMB-4-NYQ-CAF-FRG-DEG": ["NY-Q", "CA-F", "FR-G", "DE-G"],
+                  "CMB-4-NYQ-CAF-FRI-DEG": ["NY-Q", "CA-F", "FR-I", "DE-G"],
+                  "CMB-4-NYQ-CAS-FRG-FRI": ["NY-Q", "CA-S", "FR-G", "FR-I"],
+                  "CMB-4-NYQ-CAS-FRG-DEG": ["NY-Q", "CA-S", "FR-G", "DE-G"],
+                  "CMB-4-NYQ-CAS-FRI-DEG": ["NY-Q", "CA-S", "FR-I", "DE-G"],
+                  "CMB-4-NYQ-FRG-FRI-DEG": ["NY-Q", "FR-G", "FR-I", "DE-G"],
+
+
                   }
 
     # ## Dataset ##
