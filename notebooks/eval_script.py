@@ -29,6 +29,8 @@ def run():
                               "CMB-3-CAF-CAS-FRG", "CMB-3-CAF-CAS-FRI", "CMB-3-CAF-CAS-DEG", "CMB-3-CAF-FRG-FRI", "CMB-3-CAF-FRG-DEG", "CMB-3-CAF-FRI-DEG", "CMB-3-CAS-FRG-FRI", "CMB-3-CAS-FRG-DEG", "CMB-3-CAS-FRI-DEG", "CMB-3-FRG-FRI-DEG",
                               "CMB-4-NYQ-CAF-CAS-FRG", "CMB-4-NYQ-CAF-CAS-FRI", "CMB-4-NYQ-CAF-CAS-DEG", "CMB-4-NYQ-CAF-FRG-FRI", "CMB-4-NYQ-CAF-FRG-DEG", "CMB-4-NYQ-CAF-FRI-DEG", "CMB-4-NYQ-CAS-FRG-FRI", "CMB-4-NYQ-CAS-FRG-DEG", "CMB-4-NYQ-CAS-FRI-DEG", "CMB-4-NYQ-FRG-FRI-DEG",
                               "CMB-4-CAF-CAS-FRG-FRI", "CMB-4-CAF-CAS-FRG-DEG", "CMB-4-CAF-CAS-FRI-DEG", "CMB-4-CAF-FRG-FRI-DEG", "CMB-4-CAS-FRG-FRI-DEG",
+                              "FT-CAF99-NYQ01","FT-CAF98-NYQ02","FT-CAF97-NYQ03","FT-CAF96-NYQ04","FT-CAF95-NYQ05","FT-CAF90-NYQ10",
+                              "FT-CAS99-NYQ01","FT-CAS98-NYQ02","FT-CAS97-NYQ03","FT-CAS96-NYQ04","FT-CAS95-NYQ05","FT-CAS90-NYQ10"
                               ]
     
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
@@ -96,6 +98,21 @@ def run():
                   "CMB-4-CAS-FRG-FRI-DEG": ["CA-S", "FR-G", "FR-I", "DE-G"],
                   }
 
+    ft_weights = {"FT-CAF99-NYQ01": {"CA-F": 0.99, "NY-Q": 0.01},
+                  "FT-CAF98-NYQ02": {"CA-F": 0.98, "NY-Q": 0.02},
+                  "FT-CAF97-NYQ03": {"CA-F": 0.97, "NY-Q": 0.03},
+                  "FT-CAF96-NYQ04": {"CA-F": 0.96, "NY-Q": 0.04},
+                  "FT-CAF95-NYQ05": {"CA-F": 0.95, "NY-Q": 0.05},
+                  "FT-CAF90-NYQ10": {"CA-F": 0.90, "NY-Q": 0.10},
+
+                  "FT-CAS99-NYQ01": {"CA-S": 0.99, "NY-Q": 0.01},
+                  "FT-CAS98-NYQ02": {"CA-S": 0.98, "NY-Q": 0.02},
+                  "FT-CAS97-NYQ03": {"CA-S": 0.97, "NY-Q": 0.03},
+                  "FT-CAS96-NYQ04": {"CA-S": 0.96, "NY-Q": 0.04},
+                  "FT-CAS95-NYQ05": {"CA-S": 0.95, "NY-Q": 0.05},
+                  "FT-CAS90-NYQ10": {"CA-S": 0.90, "NY-Q": 0.10},
+                  }
+
     # ## Dataset ##
     do_build_datasets = True
 
@@ -122,6 +139,7 @@ def run():
     do_post = True
 
     do_summary = True
+    overwrite_summary = True
     do_single_plots = False
     do_boundary_plots = False
     do_multi_plots = True
@@ -138,7 +156,7 @@ def run():
 
     if do_build_datasets:
         print("\n\n===== BUILD DATASETS =====\n\n")
-        build_datasets(paths, train_sets, myseeds, n_set, splits, combo_sets)
+        build_datasets(paths, train_sets, myseeds, n_set, splits, combo_sets, ft_weights)
 
     if do_train_models:
         print("\n\n===== TRAINING =====\n\n")
@@ -150,7 +168,7 @@ def run():
 
     if do_post:
         print("\n\n===== POST =====\n\n")
-        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_single_plots, do_boundary_plots, do_multi_plots, do_imagewise_metrics)
+        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_single_plots, do_boundary_plots, do_multi_plots, do_imagewise_metrics, overwrite_summary)
 
 
 def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, test_sets):
@@ -236,7 +254,7 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
         modeloutroot = os.path.join(siteroot, "models")
         predictionroot = os.path.join(siteroot, "predictions")
 
-        if "CMB" in train_set:  # let the img_root be pulled from the file
+        if "CMB" in train_set or "FT" in train_set:  # let the img_root be pulled from the file
             img_root = None
             mask_root = None
         else:
@@ -295,17 +313,25 @@ def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, tes
     return paths
 
 
-def build_datasets(paths, train_sets, seeds, n_set, test_train_valid, combo_sets=None):
+def build_datasets(paths, train_sets, seeds, n_set, test_train_valid, combo_sets=None, ft_weights=None):
     """
     Wrapper for building the test/train/validation subsets that are listed in text files.
 
-    Some special note is warranted for combo datasets. They must use the word CMB in the train_set identifier. If CMB
+    Combo datasets - They must use the word CMB in the train_set identifier. If CMB
     datasets are present, the optional parameter `combo_sets` must be provided. It should be a dictionary, keyed by the
     train_set identifier for the combo set, and then valued as a list of other train_sets to use. All values specified
     within the `combo_set` must be listed as a train_set in `paths`.
     e.g.
         train_sets = ["NY-Q", "DE-G", "FR-I", "CMB2"]
         combo_sets = {"CMB2": ["NY-Q", "FR-I"]}
+
+    Fine-tuning datasets - They must use the word FT in the train_set identifier. If FT
+    datasets are present, the optional parameter `ft_weights` must be provided. It should be a dictionary, keyed by the
+    train_set identifier for the combo set. The value should be an additional dict with train_sets as keys and weights
+    as values. All sets specified within the `ft_weights` must be listed as a train_set in `paths`.
+    e.g.
+        train_sets = ["NY-Q", "DE-G", "FR-I", "FT-NYQ10-DEG45-FRI45"]
+        combo_sets = {"FT-NYQ10-DEG45-FRI45": {"NY-Q": 0.1, "DE-G": 0.45, "FR-I": 0.45}}
 
     Parameters
     ----------
@@ -322,6 +348,8 @@ def build_datasets(paths, train_sets, seeds, n_set, test_train_valid, combo_sets
         floats representing the test/train/validation split. e.g. [0.1, 0.8, 0.1]
     combo_sets: dict
         dictionary defining any CMB datasets. See full description for info.
+    ft_weights: dict
+        dictionary defining any fine-tuning datasets. See full description for info.
     """
     for train_set in train_sets:
         for seed in seeds:
@@ -358,6 +386,40 @@ def build_datasets(paths, train_sets, seeds, n_set, test_train_valid, combo_sets
                     make_combo_dataset_txt(all_v_m_fs, v_m_f, all_mask_rt, total_imgs=int(n_set * test_train_valid[2]), seed=seed)
                 except KeyError:
                     print(f"combo_sets does not contain a specifier for {train_set}. Skipping...")
+            elif "FT" in train_set:
+                try:
+                    these_sets = ft_weights[train_set]  # the dict
+                    these_weights = list(these_sets.values())  # the weights
+
+                    # File names
+                    tr_im_f = paths[train_set][seed]['train_im']
+                    tr_m_f = paths[train_set][seed]['train_mask']
+                    v_im_f = paths[train_set][seed]['valid_im']
+                    v_m_f = paths[train_set][seed]['valid_mask']
+
+                    # Paths for the base sets
+                    all_img_rt = [paths[someset]['img_root'] for someset in these_sets]
+                    all_mask_rt = [paths[someset]['mask_root'] for someset in these_sets]
+
+                    # train img
+                    all_tr_i_fs = [paths[someset][seed]['train_im'] for someset in these_sets]
+                    make_combo_dataset_txt(all_tr_i_fs, tr_im_f, all_img_rt, total_imgs=int(n_set * test_train_valid[1]), weights=these_weights, seed=seed)
+
+                    # train mask
+                    all_tr_m_fs = [paths[someset][seed]['train_mask'] for someset in these_sets]
+                    make_combo_dataset_txt(all_tr_m_fs, tr_m_f, all_mask_rt, total_imgs=int(n_set * test_train_valid[1]), weights=these_weights, seed=seed)
+
+                    # val img
+                    all_v_i_fs = [paths[someset][seed]['valid_im'] for someset in these_sets]
+                    make_combo_dataset_txt(all_v_i_fs, v_im_f, all_img_rt, total_imgs=int(n_set * test_train_valid[2]), weights=these_weights, seed=seed)
+
+                    # val mask
+                    all_v_m_fs = [paths[someset][seed]['valid_mask'] for someset in these_sets]
+                    make_combo_dataset_txt(all_v_m_fs, v_m_f, all_mask_rt, total_imgs=int(n_set * test_train_valid[2]), weights=these_weights, seed=seed)
+
+
+                except KeyError:
+                    print(f"ft_weights does not contain a specifier for {train_set}. Skipping...")
             else:
                 # Build datasets with positive examples only
                 tiledir = paths[train_set]['tiles']
@@ -480,7 +542,7 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
                         gc.collect()
 
 
-def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_single_plots=False, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False):
+def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_single_plots=False, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False, overwrite_summary=True):
     """
         Wrapper to help perform the postprocessing for a large set of models
 
@@ -511,6 +573,8 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
             Should global multi_plot representations be generated?
         gen_imagewise_metrics: bool (default False)
             Should imagewise metrics be calculated?
+        overwrite_summary: bool (default True)
+            Should the summary file be overwritten if it already exists?
         """
     for seed in seeds:
         for backbone in backbones:
@@ -528,7 +592,7 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
                             res_files[test_set][train_set] = paths[train_set][seed][backbone][model_rev][test_set][
                                 'result_file']
                     # Do the summary
-                    generate_run_summary(res_files, summary_file)
+                    generate_run_summary(res_files, summary_file, overwrite=overwrite_summary)
 
                 # The summary plots occur for an entire test set but encompass multiple training sets
                 for test_set in test_sets:
