@@ -6,7 +6,7 @@ import numpy as np
 from utils.fileio import files_of_type
 
 
-def generate_blank_json_file(json_file, shape):
+def generate_blank_json_file(json_file, shape, overwrite=False):
     """
     Create a blank JSON file consistent with the structure of labelme outputs.
 
@@ -17,6 +17,9 @@ def generate_blank_json_file(json_file, shape):
     shape: tuple
         The (height, width) of the image
     """
+    if os.path.exists(json_file) and not overwrite:
+        print("File already exists: {}".format(json_file))
+
     with open(json_file, "w") as file:
         data = {
             "version": "5.0.1",
