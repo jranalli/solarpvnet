@@ -30,7 +30,8 @@ def run():
                               "CMB-4-NYQ-CAF-CAS-FRG", "CMB-4-NYQ-CAF-CAS-FRI", "CMB-4-NYQ-CAF-CAS-DEG", "CMB-4-NYQ-CAF-FRG-FRI", "CMB-4-NYQ-CAF-FRG-DEG", "CMB-4-NYQ-CAF-FRI-DEG", "CMB-4-NYQ-CAS-FRG-FRI", "CMB-4-NYQ-CAS-FRG-DEG", "CMB-4-NYQ-CAS-FRI-DEG", "CMB-4-NYQ-FRG-FRI-DEG",
                               "CMB-4-CAF-CAS-FRG-FRI", "CMB-4-CAF-CAS-FRG-DEG", "CMB-4-CAF-CAS-FRI-DEG", "CMB-4-CAF-FRG-FRI-DEG", "CMB-4-CAS-FRG-FRI-DEG",
                               "FT-CAF99-NYQ01","FT-CAF98-NYQ02","FT-CAF97-NYQ03","FT-CAF96-NYQ04","FT-CAF95-NYQ05","FT-CAF90-NYQ10",
-                              "FT-CAS99-NYQ01","FT-CAS98-NYQ02","FT-CAS97-NYQ03","FT-CAS96-NYQ04","FT-CAS95-NYQ05","FT-CAS90-NYQ10"
+                              "FT-CAS99-NYQ01","FT-CAS98-NYQ02","FT-CAS97-NYQ03","FT-CAS96-NYQ04","FT-CAS95-NYQ05","FT-CAS90-NYQ10",
+                              "FT-FRI99-NYQ01", "FT-FRI98-NYQ02", "FT-FRI97-NYQ03", "FT-FRI96-NYQ04", "FT-FRI95-NYQ05", "FT-FRI90-NYQ10",
                               ]
     
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
@@ -111,13 +112,20 @@ def run():
                   "FT-CAS96-NYQ04": {"CA-S": 0.96, "NY-Q": 0.04},
                   "FT-CAS95-NYQ05": {"CA-S": 0.95, "NY-Q": 0.05},
                   "FT-CAS90-NYQ10": {"CA-S": 0.90, "NY-Q": 0.10},
+
+                  "FT-FRI99-NYQ01": {"FR-I": 0.99, "NY-Q": 0.01},
+                  "FT-FRI98-NYQ02": {"FR-I": 0.98, "NY-Q": 0.02},
+                  "FT-FRI97-NYQ03": {"FR-I": 0.97, "NY-Q": 0.03},
+                  "FT-FRI96-NYQ04": {"FR-I": 0.96, "NY-Q": 0.04},
+                  "FT-FRI95-NYQ05": {"FR-I": 0.95, "NY-Q": 0.05},
+                  "FT-FRI90-NYQ10": {"FR-I": 0.90, "NY-Q": 0.10},
                   }
 
     # ## Dataset ##
     do_build_datasets = True
 
     splits = [0.2, 0.72, 0.08]  # Test, Train, Valid
-    myseeds = [42, 2023]
+    myseeds = [42]
     n_set = 1000
 
     # ## Train ##
@@ -144,6 +152,7 @@ def run():
     do_boundary_plots = False
     do_multi_plots = True
     do_imagewise_metrics = True
+    overwrite_imagewise = True
 
     # #### END SETTINGS ####
 
@@ -168,7 +177,7 @@ def run():
 
     if do_post:
         print("\n\n===== POST =====\n\n")
-        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_single_plots, do_boundary_plots, do_multi_plots, do_imagewise_metrics, overwrite_summary)
+        postprocess(paths, train_sets, myseeds, mybackbones, model_revs, test_sets, do_summary, do_single_plots, do_boundary_plots, do_multi_plots, do_imagewise_metrics, overwrite_summary, overwrite_imagewise)
 
 
 def configure_paths(data_root_dir, train_sets, seeds, backbones, model_revs, test_sets):
@@ -542,7 +551,7 @@ def eval_models(paths, train_sets, seeds, backbones, model_revs, test_sets, img_
                         gc.collect()
 
 
-def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_single_plots=False, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False, overwrite_summary=True):
+def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_summary=True, gen_single_plots=False, gen_boundary_plots=False, gen_multi_plots=False, gen_imagewise_metrics=False, overwrite_summary=True, overwrite_imagewise=True):
     """
         Wrapper to help perform the postprocessing for a large set of models
 
@@ -575,6 +584,8 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
             Should imagewise metrics be calculated?
         overwrite_summary: bool (default True)
             Should the summary file be overwritten if it already exists?
+        overwrite_imagewise: bool (default True)
+            Should the imagewise metrics file be overwritten if it already exists?
         """
     for seed in seeds:
         for backbone in backbones:
@@ -632,7 +643,7 @@ def postprocess(paths, train_sets, seeds, backbones, model_revs, test_sets, gen_
                     if gen_imagewise_metrics:
                         print(f"\n=={test_set} Imagewise==")
                         imgmetricfile = paths[test_set][seed][backbone][model_rev][test_set]['imagewise_metric_file']
-                        aggregate_imagewise_metrics(test_mask_path, pred_dirs, imgmetricfile, model_names=train_sets)
+                        aggregate_imagewise_metrics(test_mask_path, pred_dirs, imgmetricfile, model_names=train_sets, overwrite=overwrite_imagewise)
 
 
 if __name__ == "__main__":
