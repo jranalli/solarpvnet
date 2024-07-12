@@ -29,9 +29,11 @@ def run():
                               "CMB-3-CAF-CAS-FRG", "CMB-3-CAF-CAS-FRI", "CMB-3-CAF-CAS-DEG", "CMB-3-CAF-FRG-FRI", "CMB-3-CAF-FRG-DEG", "CMB-3-CAF-FRI-DEG", "CMB-3-CAS-FRG-FRI", "CMB-3-CAS-FRG-DEG", "CMB-3-CAS-FRI-DEG", "CMB-3-FRG-FRI-DEG",
                               "CMB-4-NYQ-CAF-CAS-FRG", "CMB-4-NYQ-CAF-CAS-FRI", "CMB-4-NYQ-CAF-CAS-DEG", "CMB-4-NYQ-CAF-FRG-FRI", "CMB-4-NYQ-CAF-FRG-DEG", "CMB-4-NYQ-CAF-FRI-DEG", "CMB-4-NYQ-CAS-FRG-FRI", "CMB-4-NYQ-CAS-FRG-DEG", "CMB-4-NYQ-CAS-FRI-DEG", "CMB-4-NYQ-FRG-FRI-DEG",
                               "CMB-4-CAF-CAS-FRG-FRI", "CMB-4-CAF-CAS-FRG-DEG", "CMB-4-CAF-CAS-FRI-DEG", "CMB-4-CAF-FRG-FRI-DEG", "CMB-4-CAS-FRG-FRI-DEG",
-                              "FT-CAF99-NYQ01","FT-CAF98-NYQ02","FT-CAF97-NYQ03","FT-CAF96-NYQ04","FT-CAF95-NYQ05","FT-CAF90-NYQ10",
-                              "FT-CAS99-NYQ01","FT-CAS98-NYQ02","FT-CAS97-NYQ03","FT-CAS96-NYQ04","FT-CAS95-NYQ05","FT-CAS90-NYQ10",
-                              "FT-FRI99-NYQ01", "FT-FRI98-NYQ02", "FT-FRI97-NYQ03", "FT-FRI96-NYQ04", "FT-FRI95-NYQ05", "FT-FRI90-NYQ10",
+                              "FT-CAF99-NYQ01","FT-CAF98-NYQ02","FT-CAF97-NYQ03","FT-CAF96-NYQ04","FT-CAF95-NYQ05","FT-CAF90-NYQ10","FT-CAF80-NYQ20", "FT-CAF70-NYQ30", "FT-CAF60-NYQ40", "FT-CAF50-NYQ50",
+                              "FT-CAS99-NYQ01","FT-CAS98-NYQ02","FT-CAS97-NYQ03","FT-CAS96-NYQ04","FT-CAS95-NYQ05","FT-CAS90-NYQ10","FT-CAS80-NYQ20", "FT-CAS70-NYQ30", "FT-CAS60-NYQ40", "FT-CAS50-NYQ50",
+                              "FT-FRG99-NYQ01","FT-FRG98-NYQ02","FT-FRG97-NYQ03","FT-FRG96-NYQ04","FT-FRG95-NYQ05","FT-FRG90-NYQ10","FT-FRG80-NYQ20", "FT-FRG70-NYQ30", "FT-FRG60-NYQ40", "FT-FRG50-NYQ50",
+                              "FT-FRI99-NYQ01","FT-FRI98-NYQ02","FT-FRI97-NYQ03","FT-FRI96-NYQ04","FT-FRI95-NYQ05","FT-FRI90-NYQ10","FT-FRI80-NYQ20", "FT-FRI70-NYQ30", "FT-FRI60-NYQ40", "FT-FRI50-NYQ50",
+                              "FT-DEG99-NYQ01","FT-DEG98-NYQ02","FT-DEG97-NYQ03","FT-DEG96-NYQ04","FT-DEG95-NYQ05","FT-DEG90-NYQ10","FT-DEG80-NYQ20", "FT-DEG70-NYQ30", "FT-DEG60-NYQ40", "FT-DEG50-NYQ50",
                               ]
     
     combo_sets = {"CMB-6": ["CA-F", "CA-S", "FR-G", "FR-I", "DE-G", "NY-Q"],
@@ -99,26 +101,61 @@ def run():
                   "CMB-4-CAS-FRG-FRI-DEG": ["CA-S", "FR-G", "FR-I", "DE-G"],
                   }
 
-    ft_weights = {"FT-CAF99-NYQ01": {"CA-F": 0.99, "NY-Q": 0.01},
-                  "FT-CAF98-NYQ02": {"CA-F": 0.98, "NY-Q": 0.02},
-                  "FT-CAF97-NYQ03": {"CA-F": 0.97, "NY-Q": 0.03},
-                  "FT-CAF96-NYQ04": {"CA-F": 0.96, "NY-Q": 0.04},
-                  "FT-CAF95-NYQ05": {"CA-F": 0.95, "NY-Q": 0.05},
-                  "FT-CAF90-NYQ10": {"CA-F": 0.90, "NY-Q": 0.10},
+    ft_weights = {
+                    "FT-CAF99-NYQ01": {"CA-F": 0.99, "NY-Q": 0.01},
+                    "FT-CAF98-NYQ02": {"CA-F": 0.98, "NY-Q": 0.02},
+                    "FT-CAF97-NYQ03": {"CA-F": 0.97, "NY-Q": 0.03},
+                    "FT-CAF96-NYQ04": {"CA-F": 0.96, "NY-Q": 0.04},
+                    "FT-CAF95-NYQ05": {"CA-F": 0.95, "NY-Q": 0.05},
+                    "FT-CAF90-NYQ10": {"CA-F": 0.90, "NY-Q": 0.10},
+                    "FT-CAF80-NYQ20": {"CA-F": 0.80, "NY-Q": 0.20},
+                    "FT-CAF70-NYQ30": {"CA-F": 0.70, "NY-Q": 0.30},
+                    "FT-CAF60-NYQ40": {"CA-F": 0.60, "NY-Q": 0.40},
+                    "FT-CAF50-NYQ50": {"CA-F": 0.50, "NY-Q": 0.50},
 
-                  "FT-CAS99-NYQ01": {"CA-S": 0.99, "NY-Q": 0.01},
-                  "FT-CAS98-NYQ02": {"CA-S": 0.98, "NY-Q": 0.02},
-                  "FT-CAS97-NYQ03": {"CA-S": 0.97, "NY-Q": 0.03},
-                  "FT-CAS96-NYQ04": {"CA-S": 0.96, "NY-Q": 0.04},
-                  "FT-CAS95-NYQ05": {"CA-S": 0.95, "NY-Q": 0.05},
-                  "FT-CAS90-NYQ10": {"CA-S": 0.90, "NY-Q": 0.10},
+                    "FT-CAS99-NYQ01": {"CA-S": 0.99, "NY-Q": 0.01},
+                    "FT-CAS98-NYQ02": {"CA-S": 0.98, "NY-Q": 0.02},
+                    "FT-CAS97-NYQ03": {"CA-S": 0.97, "NY-Q": 0.03},
+                    "FT-CAS96-NYQ04": {"CA-S": 0.96, "NY-Q": 0.04},
+                    "FT-CAS95-NYQ05": {"CA-S": 0.95, "NY-Q": 0.05},
+                    "FT-CAS90-NYQ10": {"CA-S": 0.90, "NY-Q": 0.10},
+                    "FT-CAS80-NYQ20": {"CA-S": 0.80, "NY-Q": 0.20},
+                    "FT-CAS70-NYQ30": {"CA-S": 0.70, "NY-Q": 0.30},
+                    "FT-CAS60-NYQ40": {"CA-S": 0.60, "NY-Q": 0.40},
+                    "FT-CAS50-NYQ50": {"CA-S": 0.50, "NY-Q": 0.50},
 
-                  "FT-FRI99-NYQ01": {"FR-I": 0.99, "NY-Q": 0.01},
-                  "FT-FRI98-NYQ02": {"FR-I": 0.98, "NY-Q": 0.02},
-                  "FT-FRI97-NYQ03": {"FR-I": 0.97, "NY-Q": 0.03},
-                  "FT-FRI96-NYQ04": {"FR-I": 0.96, "NY-Q": 0.04},
-                  "FT-FRI95-NYQ05": {"FR-I": 0.95, "NY-Q": 0.05},
-                  "FT-FRI90-NYQ10": {"FR-I": 0.90, "NY-Q": 0.10},
+                    "FT-FRG99-NYQ01": {"FR-G": 0.99, "NY-Q": 0.01},
+                    "FT-FRG98-NYQ02": {"FR-G": 0.98, "NY-Q": 0.02},
+                    "FT-FRG97-NYQ03": {"FR-G": 0.97, "NY-Q": 0.03},
+                    "FT-FRG96-NYQ04": {"FR-G": 0.96, "NY-Q": 0.04},
+                    "FT-FRG95-NYQ05": {"FR-G": 0.95, "NY-Q": 0.05},
+                    "FT-FRG90-NYQ10": {"FR-G": 0.90, "NY-Q": 0.10},
+                    "FT-FRG80-NYQ20": {"FR-G": 0.80, "NY-Q": 0.20},
+                    "FT-FRG70-NYQ30": {"FR-G": 0.70, "NY-Q": 0.30},
+                    "FT-FRG60-NYQ40": {"FR-G": 0.60, "NY-Q": 0.40},
+                    "FT-FRG50-NYQ50": {"FR-G": 0.50, "NY-Q": 0.50},
+
+                    "FT-FRI99-NYQ01": {"FR-I": 0.99, "NY-Q": 0.01},
+                    "FT-FRI98-NYQ02": {"FR-I": 0.98, "NY-Q": 0.02},
+                    "FT-FRI97-NYQ03": {"FR-I": 0.97, "NY-Q": 0.03},
+                    "FT-FRI96-NYQ04": {"FR-I": 0.96, "NY-Q": 0.04},
+                    "FT-FRI95-NYQ05": {"FR-I": 0.95, "NY-Q": 0.05},
+                    "FT-FRI90-NYQ10": {"FR-I": 0.90, "NY-Q": 0.10},
+                    "FT-FRI80-NYQ20": {"FR-I": 0.80, "NY-Q": 0.20},
+                    "FT-FRI70-NYQ30": {"FR-I": 0.70, "NY-Q": 0.30},
+                    "FT-FRI60-NYQ40": {"FR-I": 0.60, "NY-Q": 0.40},
+                    "FT-FRI50-NYQ50": {"FR-I": 0.50, "NY-Q": 0.50},
+
+                    "FT-DEG99-NYQ01": {"DE-G": 0.99, "NY-Q": 0.01},
+                    "FT-DEG98-NYQ02": {"DE-G": 0.98, "NY-Q": 0.02},
+                    "FT-DEG97-NYQ03": {"DE-G": 0.97, "NY-Q": 0.03},
+                    "FT-DEG96-NYQ04": {"DE-G": 0.96, "NY-Q": 0.04},
+                    "FT-DEG95-NYQ05": {"DE-G": 0.95, "NY-Q": 0.05},
+                    "FT-DEG90-NYQ10": {"DE-G": 0.90, "NY-Q": 0.10},
+                    "FT-DEG80-NYQ20": {"DE-G": 0.80, "NY-Q": 0.20},
+                    "FT-DEG70-NYQ30": {"DE-G": 0.70, "NY-Q": 0.30},
+                    "FT-DEG60-NYQ40": {"DE-G": 0.60, "NY-Q": 0.40},
+                    "FT-DEG50-NYQ50": {"DE-G": 0.50, "NY-Q": 0.50},
                   }
 
     # ## Dataset ##
@@ -137,7 +174,7 @@ def run():
     patience = 10
     norm = True
     freeze = True
-    model_revs = ["1", "2"]
+    model_revs = ["1"]
 
     # ## Test ##
     do_test_models = True
