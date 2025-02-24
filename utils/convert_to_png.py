@@ -125,9 +125,9 @@ def tif_to_png(tif_dir, overwrite=False, verbose=True, delete=False):
 
 
 # Example dirs for testing
-sourcefile = "c:\\nycdata\\boro_queens_sp18.zip"
-outdir = "c:\\nycdata\\boro_queens_sp18_png"
-outdir_a = "c:\\nycdata\\boro_queens_sp18_alpha"
+sourcefile = r"E:\datasets\PV Aerial\NY\Raw\boro_queens_sp18.zip"
+outdir = r"E:\datasets\PV Aerial\NY\img"
+outdir_a = r"E:\datasets\PV Aerial\NY\img_ir"
 
 if __name__ == "__main__":
     zip_to_png(sourcefile, outdir, outdir_a)
