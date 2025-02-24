@@ -19,6 +19,7 @@ test = "CA-F"
 data_path = rf"D:\data\solardnn\results\resnet34_42_1\{test}_test\resnet34_42_v1_{test}_imgmetrics.xlsx"
 img_path = rf"D:\data\solardnn\{test}\tiles\img"
 mask_path = rf"D:\data\solardnn\{test}\tiles\mask"
+pred_path = rf"D:\data\solardnn\MODELBLANK\predictions\MODELBLANK_resnet34_42_v1_predicting_TESTBLANK\pred_masks"
 
 
 
@@ -239,8 +240,8 @@ def display_hover(hoverData):
     bbox = hoverData['points'][0]["bbox"]
     img_src = hoverData['points'][0]['customdata'][0]
     model = hoverData['points'][0]['customdata'][1]
-    pred_path = rf"D:\data\solardnn\{model}\predictions\{model}_resnet34_42_v1_predicting_{test}\pred_masks"
-    img_dat = np_image_to_base64(img_path,mask_path, pred_path, img_src)
+    pred_path_i = pred_path.replace("MODELBLANK", model).replace("TESTBLANK", test)
+    img_dat = np_image_to_base64(img_path,mask_path, pred_path_i, img_src)
     children = [
         html.Div([html.H1(f"{model}"),
                   html.H6(f"{hoverData['points'][0]['x']}"),
