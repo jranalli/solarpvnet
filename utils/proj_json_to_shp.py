@@ -32,8 +32,11 @@ import os
 import glob
 import pandas as pd
 
-rawdir = r"E:\datasets\PV Aerial\NY\Raw\boro_queens_sp18"
-jsondir = r"E:\datasets\PV Aerial\NY\json"
+driveltr = "d:"
+
+rawdir = os.path.join(driveltr, r"datasets\PV Aerial\NY\Raw\boro_queens_sp18")
+maskdir = os.path.join(driveltr, r"datasets\PV Aerial\NY\mask")
+jsondir = os.path.join(driveltr, r"datasets\PV Aerial\NY\json")
 
 def get_wkt():
     """
@@ -61,6 +64,14 @@ def assert_projection():
             assert 'NAD_1983_2011_StatePlane_New_York_Long_Isl_FIPS_3104_Ft_US' in data
 
 
+def create_masks():
+    from json_to_dataset import labelme_json_to_binary
+    label_id_dict = {"_background_": 0, "notpv": 0, "pv": 255}
+    layer_order = ["pv", "notpv"]
+
+    for fn in glob.glob(os.path.join(jsondir, "*.json")):
+        labelme_json_to_binary(fn, maskdir, label_id_dict, layer_order=layer_order)
+
 
 def read_tile_table():
     """
@@ -85,6 +96,112 @@ def read_tile_table():
 
     return df
 
+def load_labelme_json():
+    """
+    Load the labelme json files
+    """
+    import json
+    import shapely
+
+    # fns = glob.glob(os.path.join(jsondir, "*.json"))
+    fns = [os.path.join(jsondir, "000207.json")]
+
+    translate_table = read_tile_table()
+
+    for fn in fns:
+
+        pv_with_inner = {}
+        pv_with_inner_json = []
+
+        with open(fn, "r") as file:
+
+            data = json.load(file)
+            shapes = data["shapes"]
+            pv = [shape for shape in shapes if shape["label"] == "pv"]
+            notpv = [shape for shape in shapes if shape["label"] == "notpv"]
+
+            total_pv_count = len(pv)
+
+            # Loop over the notpv
+            for notpvshape in notpv:
+
+                # create a shapely version
+                notpv_shapely = shapely.geometry.Polygon(notpvshape["points"])
+
+                # Loop over the pv to see which contains it
+                for pvshape in pv:
+
+                    # Create a shapely version
+                    pv_shapely = shapely.geometry.Polygon(pvshape["points"])
+
+                    # Is this the PV that contains it?
+                    if notpv_shapely.within(pv_shapely):
+
+                        # Initialize if we haven't stored it
+                        if pv_shapely not in pv_with_inner:
+                            pv_with_inner[pv_shapely] = [notpvshape]
+                            pv_with_inner_json.append(pvshape)
+                        else:
+                            pv_with_inner[pv_shapely].append(notpvshape)
+                        break
+
+        assert (sum([len(v) for v in pv_with_inner.values()]) == len(notpv))
+        # print(len(notpv))
+        # print(len(pv_with_inner))
+        # print([len(v) for v in pv_with_inner.values()])
+
+        # We now have a list of all the pvjson stored in pv.
+        # All the pv that contain a notpv are stored by json in pv_with_inner_json, and keyed by shapely version of pv in pv_with_inner
+
+        this_polygons = []
+
+        x_tl = int(translate_table.loc[translate_table['tile']==os.path.basename(fn).split(".")[0]+".jp2"]['xmin'].values[0])
+        y_tl = int(translate_table.loc[translate_table['tile']==os.path.basename(fn).split(".")[0]+".jp2"]['ymax'].values[0])
+        affmat = [0.5, 0, 0, -0.5, x_tl, y_tl]
+
+        # First account for the PV
+        for pvjson in pv_with_inner_json:
+            pv_shapely_ext = shapely.geometry.Polygon(pvjson["points"])
+            holes = [notpv_i['points'] for notpv_i in pv_with_inner[pv_shapely_ext]]
+
+            poly = shapely.geometry.Polygon(pvjson['points'], holes=holes)
+            poly = shapely.affinity.affine_transform(poly, affmat)
+            this_polygons.append(poly)
+
+            # Remove this one from the list of PV
+            pv.pop(pv.index(pvjson))
+
+
+        # Now account for the remaining PV
+        for pvjson in pv:
+            poly = shapely.geometry.Polygon(pvjson['points'])
+            poly = shapely.affinity.affine_transform(poly, affmat)
+            this_polygons.append(poly)
+
+
+        assert(len(this_polygons) == total_pv_count)
+
+        # Plot it to verify we did right
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots()
+
+        for poly in this_polygons:
+            # Plot Polygon
+            xe, ye = poly.exterior.xy
+
+            # If there are any Interiors
+            # Retrieve coordinates for all interiors
+            for inner in poly.interiors:
+                xi, yi = zip(*inner.coords[:])
+                ax.plot(xi, yi, color="blue")
+
+            ax.plot(xe, ye, color="blue")
+        plt.axis('equal')
+        plt.show()
+
 if __name__ == "__main__":
-    # check_for_projection()
-    read_tile_table()
+
+    # assert_projection()
+    # read_tile_table()
+    # create_masks()
+    load_labelme_json()
