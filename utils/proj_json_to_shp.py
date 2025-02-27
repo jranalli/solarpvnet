@@ -199,6 +199,14 @@ def load_labelme_json():
         plt.axis('equal')
         plt.show()
 
+        import geopandas
+        # Create a GeoDataFrame
+        gdf = geopandas.GeoDataFrame(geometry=this_polygons, crs=get_wkt())
+
+        print(gdf)
+
+        
+
 if __name__ == "__main__":
 
     # assert_projection()
