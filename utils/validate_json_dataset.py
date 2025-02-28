@@ -52,6 +52,22 @@ def notpv_within_pv():
     print(f"{n_not} notpv shapes within pv shapes")
     print(f"{fails} notpv shapes failed test")
 
+
+def assert_projection():
+    """
+    Confirm that the projection in each file is the same
+    :return:
+    AssertionError if not true
+    """
+    fns = glob.glob(os.path.join(rawdir, "*.jp2"))
+    for fn in fns:
+        with open(fn, "r", encoding='latin-1') as file:
+            # read first line of file
+            _ = next(file)
+            _ = next(file)
+            data = next(file)
+            assert 'NAD_1983_2011_StatePlane_New_York_Long_Isl_FIPS_3104_Ft_US' in data
+
 if __name__ == "__main__":
     # print_maybes()
     notpv_within_pv()
